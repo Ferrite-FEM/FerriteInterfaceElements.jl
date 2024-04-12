@@ -22,9 +22,12 @@ export
     function_gradient_average,
     function_value_jump,
     function_gradient_jump,
-    getdetJdV_average
+    getdetJdV_average,
+    create_interface_cells!
 
 include("cells.jl")
+
+include("grid.jl")
 
 include("interpolations.jl")
 
