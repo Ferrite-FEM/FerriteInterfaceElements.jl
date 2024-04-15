@@ -27,8 +27,6 @@ export
 
 include("cells.jl")
 
-include("grid.jl")
-
 include("interpolations.jl")
 
 include("cellvalues.jl")
