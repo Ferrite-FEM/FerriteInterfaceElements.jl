@@ -117,7 +117,7 @@ version = "0.3.14"
 
 [[deps.FerriteInterfaceElements]]
 deps = ["Ferrite"]
-path = "/Users/auth/.julia/dev/FerriteInterfaceElements"
+path = ".."
 uuid = "76cf2c14-24ca-44b2-b86c-6046d3cfcf82"
 version = "1.0.0-DEV"
 
