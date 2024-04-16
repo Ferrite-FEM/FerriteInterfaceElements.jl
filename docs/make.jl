@@ -1,7 +1,16 @@
+using TimerOutputs
+
+dto = TimerOutput()
+reset_timer!(dto)
+
+using Ferrite
 using FerriteInterfaceElements
 using Documenter
 
-DocMeta.setdocmeta!(FerriteInterfaceElements, :DocTestSetup, :(using FerriteInterfaceElements); recursive=true)
+DocMeta.setdocmeta!(FerriteInterfaceElements, :DocTestSetup, :(using Ferrite, FerriteInterfaceElements); recursive=true)
+
+# Generate tutorials
+include("generate.jl")
 
 makedocs(;
     modules=[FerriteInterfaceElements],
@@ -14,10 +23,22 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Tutorials" => [
+            "Tutorials overview" => "tutorials/index.md",
+            "tutorials/heat_equation.md",
+        ],
+        "Reference" => [
+            "Reference overview" => "reference/index.md",
+            "reference/grid.md",
+            "reference/interpolations.md",
+            "reference/cellvalues.md",
+        ],
+        "devdocs/index.md",
     ],
 )
 
 deploydocs(;
     repo="github.com/Ferrite-FEM/FerriteInterfaceElements.jl",
     devbranch="main",
+    push_preview=true,
 )
