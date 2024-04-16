@@ -128,7 +128,7 @@ function plot_temperature(u::Vector, dh::DofHandler)
     temperature = get_nodal_temperatures(u, dh)
 
     fig = Makie.Figure()
-    ax = Makie.Axis(fig[1,1]; title="Solution")
+    ax = Makie.Axis(fig[1,1]; title="Solution", aspect=Makie.DataAspect())
     p = Makie.mesh!(ax, mesh; color=temperature, colormap=:heat)
     Makie.Colorbar(fig[1,2], p; label="u", labelrotation=0)
     return fig
