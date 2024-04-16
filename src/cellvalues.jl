@@ -10,8 +10,8 @@ An `InterfaceCellValues` wraps two `CellValues`, one for each face of an `Interf
 - `basefunctionshere::Vector{Int}`: base function indices on face "here"
 - `basefunctionsthere::Vector{Int}`: base function indices on face "there"
 """
-struct InterfaceCellValues{IP, CVhere, CVthere} <: AbstractCellValues
-    ip::IP
+struct InterfaceCellValues{CVhere, CVthere} <: AbstractCellValues
+    ip::Interpolation
     here::CVhere
     there::CVthere
     basefunctionshere::Vector{Int}
@@ -20,9 +20,9 @@ struct InterfaceCellValues{IP, CVhere, CVthere} <: AbstractCellValues
     function InterfaceCellValues(ip::IP, here::CVhere, there::CVthere) where {IP<:Interpolation, CVhere<:CellValues, CVthere<:CellValues}
         @assert here.qr === there.qr "For `InterfaceCellValues` the underlying `CellValues` need to use the same `QuadratureRule`."
         sip = ip isa VectorizedInterpolation ? ip.ip : ip
-        basefunctionshere = collect( get_interface_index(sip, :here, i) for i in 1:getnbasefunctions(sip.here))
-        basefunctionsthere = collect( get_interface_index(sip, :there, i) for i in 1:getnbasefunctions(sip.there))
-        return new{IP, CVhere, CVthere}(ip, here, there, basefunctionshere, basefunctionsthere)
+        basefunctionshere = collect( get_interface_index(sip, :here, i) for i in 1:getnbasefunctions(sip.here) )
+        basefunctionsthere = collect( get_interface_index(sip, :there, i) for i in 1:getnbasefunctions(sip.there) )
+        return new{CVhere, CVthere}(ip, here, there, basefunctionshere, basefunctionsthere)
     end
 end
 
