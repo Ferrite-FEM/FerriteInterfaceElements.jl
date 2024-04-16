@@ -40,4 +40,5 @@ makedocs(;
 deploydocs(;
     repo="github.com/Ferrite-FEM/FerriteInterfaceElements.jl",
     devbranch="main",
+    push_preview=true,
 )
