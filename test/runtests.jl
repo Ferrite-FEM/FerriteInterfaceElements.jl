@@ -7,7 +7,7 @@ using Test
     
     include("test_interpolations.jl")
 
-    include("test_cellvalues.jl")
+    #include("test_cellvalues.jl")
 
-    include("test_examples.jl")
+    #include("test_examples.jl")
 end

@@ -17,12 +17,12 @@ to both faces of an `InterfaceCell`.
 # Fields
 - `base::ScalarInterpolation`: base interpolation
 """
-struct InterfaceCellInterpolation{shape, IP} <: ScalarInterpolation{shape, Nothing}
+struct InterfaceCellInterpolation{shape, order, IP} <: ScalarInterpolation{shape, order}
     base::IP
 
-    function InterfaceCellInterpolation(base::IP) where {IP<:ScalarInterpolation}
+    function InterfaceCellInterpolation(base::IP) where {order, IP<:ScalarInterpolation{<:Any, order}}
         shape = get_interface_cell_shape(getrefshape(base))
-        return new{shape, IP}(base)
+        return new{shape, order, IP}(base)
     end
 end
 
@@ -37,7 +37,7 @@ Ferrite.getorder(ip::VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellIn
 
 function Ferrite.vertexdof_indices(ip::InterfaceCellInterpolation)
     here  = Ferrite.vertexdof_indices(ip.base)
-    there = map(v -> map(d -> d + nvertexdofs(ip.base), v), here)
+    there = map(v -> map(d -> d + _nvertexdofs(ip.base), v), here)
     return (here..., there...)
 end
 
@@ -50,11 +50,20 @@ function Ferrite.edgedof_interior_indices(ip::InterfaceCellInterpolation{<:Abstr
     return (here..., there...)
 end
 
+function Ferrite.facedof_indices(ip::InterfaceCellInterpolation{<:AbstractRefShape{dim}}) where {dim}
+    basedofs = Ferrite.celldof_indices(ip.base)
+    offset = _nvertexdofs(ip.base) + (dim == 3 ? _nedgedofs(ip.base) : 0)
+    here  = map(v -> map(d -> d + offset, v), basedofs)
+    offset += _ncelldofs(ip.base)
+    there = map(v -> map(d -> d + offset, v), basedofs)
+    return (here, there)
+end
+
 function Ferrite.facedof_interior_indices(ip::InterfaceCellInterpolation{<:AbstractRefShape{dim}}) where {dim}
     basedofs = Ferrite.celldof_interior_indices(ip.base)
     offset = _nvertexdofs(ip.base) + (dim == 3 ? _nedgedofs(ip.base) : 0)
     here  = map(v -> map(d -> d + offset, v), basedofs)
-    offset += ncelldofs(ip.base)
+    offset += _ncelldofs(ip.base)
     there = map(v -> map(d -> d + offset, v), basedofs)
     return (here, there)
 end
@@ -85,7 +94,7 @@ function get_interface_index(ip::InterfaceCellInterpolation, side::Symbol, i::In
             return i
         elseif i ≤ nv + nf
             return i + nv
-        elseif i ≤ nvhere + nf + nc
+        elseif i ≤ nv + nf + nc
             return i + nv + nf
         end
         throw(ArgumentError("No interface index for base index $(i) on side $(side) for interpolation $(ip)."))
