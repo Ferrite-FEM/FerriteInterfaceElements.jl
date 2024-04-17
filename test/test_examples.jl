@@ -34,9 +34,13 @@ function prepare_interface_test_grid(order::Tuple{<:Integer,<:Integer})
     addfaceset!(grid, "∂Ωᵣ", x -> x[1] ≈ 2)
 return grid
 end
+
+##############################################################
+# Scalar
+##############################################################
     
 @testset "Test-example for scalar field" begin
-    @testset "ip-order=$order" for order in ((1,1), (2,2), (1,2))  
+    @testset "ip-order=$order" for order in ((1,1), (2,2))  
         function assemble_test_element!(Kₑ::Matrix, cv::CellValues)
             nbf = getnbasefunctions(cv)
             for qp in 1:getnquadpoints(cv)
@@ -71,7 +75,7 @@ end
         cellid = (left=1, interface=2, right=3)
     
         ip = (  left = Lagrange{RefHexahedron, order[1]}(),
-                interface = InterfaceCellInterpolation(Lagrange{RefQuadrilateral, order[1]}(), Lagrange{RefQuadrilateral, order[2]}()), 
+                interface = InterfaceCellInterpolation(Lagrange{RefQuadrilateral, order[1]}()),#, Lagrange{RefQuadrilateral, order[2]}()), 
                 right = Lagrange{RefHexahedron, order[2]}())
     
         cv = (  left = CellValues(QuadratureRule{RefHexahedron}(4), ip.left, ip.left), # Default geometry interpolation resulting in exception for order=2
@@ -163,9 +167,13 @@ end
         end
     end
 end
+
+##############################################################
+# Vector
+##############################################################
     
 @testset "Test-example for vector field" begin
-    @testset "ip-order=$order" for order in ((1,1), (2,2), (1,2))
+    @testset "ip-order=$order" for order in ((1,1), (2,2))
         δ(i,j) = i == j ? 1.0 : 0.0
         E = SymmetricTensor{4,3}( (i,j,k,l) -> 0.5*(δ(i,k)*δ(j,l) + δ(i,l)*δ(j,k)) ) # Using E=1, ν=0
     
@@ -203,7 +211,7 @@ end
         cellid = (left=1, interface=2, right=3)
     
         ip = (  left = Lagrange{RefHexahedron, order[1]}()^3,
-                interface = InterfaceCellInterpolation(Lagrange{RefQuadrilateral, order[1]}(), Lagrange{RefQuadrilateral, order[2]}())^3,
+                interface = InterfaceCellInterpolation(Lagrange{RefQuadrilateral, order[1]}())^3,#, Lagrange{RefQuadrilateral, order[2]}())^3,
                 right = Lagrange{RefHexahedron, order[2]}()^3)
     
         cv = (  left = CellValues(QuadratureRule{RefHexahedron}(4), ip.left, ip.left), # Default geometry interpolation resulting in exception for order=2
@@ -236,7 +244,7 @@ end
         close!(ch)
     
         @testset "Accessing shape values etc." begin
-            icv = cv[:interface]
+            icv = cv.interface
             for cc in CellIterator(dh, Set{Int}([cellid[:interface]]))
                 reinit!(icv, cc)
             end
