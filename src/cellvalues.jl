@@ -11,6 +11,7 @@ The keyword argument `use_same_cv` can be set to `false` to disable this behavio
 - `there::CellValues`:  values for face "there"
 - `base_indices_here::Vector{Int}`: base function indices on face "here"
 - `base_indices_there::Vector{Int}`: base function indices on face "there"
+- `sides_and_baseindices::Tuple`: side and base function for the base `CellValues` for each base function of the `InterfaceCellValues`
 """
 struct InterfaceCellValues{CV} <: AbstractCellValues
     here::CV
@@ -263,4 +264,18 @@ Compute the jump of the function gradient in a quadrature point.
 """
 function Ferrite.function_gradient_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
     return function_gradient(cv, qp, u, false) - function_gradient(cv, qp, u, true)
+end
+
+function Base.show(io::IO, d::MIME"text/plain", cv::InterfaceCellValues)
+    if cv.here === cv.there
+        print(io, "InterfaceCellValues based on a single CellValues:\n"); show(io, d, cv.here)
+    else
+        print(io, "InterfaceCellValues based on two different CellValues: ")
+        print(io, "\nHere:\n"); show(io, d, cv.here)
+        print(io, "\nThere:\n"); show(io, d, cv.there)
+    end
+    print(io, "\n+ Additional info:")
+    print(io, "\nBase functions here:  ", cv.base_indices_here)
+    print(io, "\nBase functions there: ", cv.base_indices_there)
+    print(io, "\nSides and indices for base cell values: ", cv.sides_and_baseindices)
 end
