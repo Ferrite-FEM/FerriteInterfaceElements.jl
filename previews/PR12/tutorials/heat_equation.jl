@@ -1,10 +1,9 @@
-using Ferrite, FerriteInterfaceElements, SparseArrays
+using Ferrite, FerriteInterfaceElements, SparseArrays, FerriteGmsh
 
-using FerriteGmsh
 # grid = togrid("periodic-rve-coarse.msh")
 grid = togrid("periodic-rve.msh")
 
-interface_cells = create_interface_cells!(grid::Grid, "inclusions", "matrix");
+interface_cells = create_interface_cells!(grid, "inclusions", "matrix");
 
 n_bulk_cells = length(grid.cells)
 n_interface_cells = length(interface_cells)
@@ -35,9 +34,9 @@ particles = getcellset(grid, "inclusions")
 ∂Ωᴾ_bottom = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "bottom"));
 
 ch = ConstraintHandler(dh)
-add!(ch, Dirichlet(:u, ∂Ωᴾ_left,   Returns(0.25)))
-add!(ch, Dirichlet(:u, ∂Ωᴾ_right,  Returns(0.75)))
-add!(ch, Dirichlet(:u, ∂Ωᴾ_top,    Returns(0.5)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_left,   Returns(1.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_right,  Returns(1.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_top,    Returns(0.0)))
 add!(ch, Dirichlet(:u, ∂Ωᴾ_bottom, Returns(0.0)))
 close!(ch);
 
