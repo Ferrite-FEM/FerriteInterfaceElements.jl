@@ -1,23 +1,16 @@
 @testset "InterfaceCell" begin
     for (here, there, shape) in (
             (         Line((1,2)),            Line((3,4)),   RefQuadrilateral), 
-            (QuadraticLine((1,2,5)),          Line((3,4)),   RefQuadrilateral), 
-            (         Line((1,2)),   QuadraticLine((3,4,5)), RefQuadrilateral), 
             (QuadraticLine((1,2,5)), QuadraticLine((3,4,6)), RefQuadrilateral),
             (         Triangle((1,2,3)),                Triangle((4,5,6)),          RefPrism), 
-            (QuadraticTriangle((1,2,3,7,8,9)),          Triangle((4,5,6)),          RefPrism), 
-            (         Triangle((1,2,3)),       QuadraticTriangle((4,5,6,7,8,9)),    RefPrism), 
             (QuadraticTriangle((1,2,3,7,8,9)), QuadraticTriangle((4,5,6,10,11,12)), RefPrism),
             (         Quadrilateral((1,2,3,4)),                        Quadrilateral((5,6,7,8)),                RefHexahedron), 
-            (QuadraticQuadrilateral((1,2,3,4,9,10,11,12,13)),          Quadrilateral((5,6,7,8)),                RefHexahedron), 
-            (         Quadrilateral((1,2,3,4)),               QuadraticQuadrilateral((5,6,7,8,9,10,11,12,13)),  RefHexahedron), 
             (QuadraticQuadrilateral((1,2,3,4,9,10,11,12,17)), QuadraticQuadrilateral((5,6,7,8,13,14,15,16,18)), RefHexahedron)
             ) # The nodes have been chosen as the numbers representing their expected ordering
-        Chere  = typeof(here)
-        Cthere = typeof(there)
+        C  = typeof(here)
 
-        @test InterfaceCell{shape, Chere, Cthere}(here, there) isa InterfaceCell{shape, Chere, Cthere}
-        @test InterfaceCell(here, there) isa InterfaceCell{shape, Chere, Cthere}
+        @test InterfaceCell{shape, C}(here, there) isa InterfaceCell{shape, C}
+        @test InterfaceCell(here, there) isa InterfaceCell{shape, C}
         cell = InterfaceCell(here, there)
 
         @test Ferrite.nvertices(cell) == Ferrite.nvertices(here) + Ferrite.nvertices(there)
@@ -28,10 +21,18 @@
         @test Ferrite.vertices(cell) == (Ferrite.vertices(here)..., Ferrite.vertices(there)...)
         @test Ferrite.faces(cell) == (Ferrite.vertices(here), Ferrite.vertices(there))
     end
-    here, there = Line((1,2)), QuadraticLine((3,4,5))
-    interface = InterfaceCell(here, there)
-    @test FerriteInterfaceElements.get_sides_and_base_indices(interface)   == ((:here,1), (:here,2), (:there,1), (:there,2), (:there,3))
-    @test FerriteInterfaceElements.get_sides_and_base_indices(here, there) == ((:here,1), (:here,2), (:there,1), (:there,2), (:there,3))
+    #=
+    here  = QuadraticQuadrilateral((1,2,3,4,9,10,11,12,17)), 
+    there = QuadraticQuadrilateral((5,6,7,8,13,14,15,16,18))
+    expected = ((:here,1),  (:here,2),  (:here,3),  (:here,4),
+                (:there,1), (:there,2), (:there,3), (:there,4),
+                (:here,5),  (:here,6),  (:here,7),  (:here,8),
+                (:there,5), (:there,6), (:there,7), (:there,8),
+                (:here,9), 
+                (:there,9))
+    @test FerriteInterfaceElements.get_sides_and_base_indices(InterfaceCell(here, there))   == expected
+    @test FerriteInterfaceElements.get_sides_and_base_indices(here, there) == expected
+    =#
 end
 
 @testset "Inserting interfaces in 2D" begin

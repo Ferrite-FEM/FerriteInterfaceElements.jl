@@ -29,7 +29,7 @@ makedocs(;
         ],
         "Reference" => [
             "Reference overview" => "reference/index.md",
-            "reference/grid.md",
+            "reference/cells.md",
             "reference/interpolations.md",
             "reference/cellvalues.md",
         ],

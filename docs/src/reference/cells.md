@@ -1,4 +1,4 @@
-# Interface Cells
+# Cells
 
 ```@docs
 InterfaceCell

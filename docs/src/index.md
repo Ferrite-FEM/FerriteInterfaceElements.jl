@@ -4,18 +4,17 @@ CurrentModule = FerriteInterfaceElements
 
 # FerriteInterfaceElements.jl
 
-Welcome to the documentation for [FerriteInterfaceElements](https://github.com/Ferrite-FEM/FerriteInterfaceElements.jl)! FerriteInterfaceElements is adding functionality to the
+Welcome to the documentation for [FerriteInterfaceElements](https://github.com/Ferrite-FEM/FerriteInterfaceElements.jl)! FerriteInterfaceElements adds functionality to the
 finite element toolbox [Ferrite](https://github.com/Ferrite-FEM/Ferrite.jl) for working
 with interface elements (also known as cohesive elements).
 
 ## How the documentation is organized
 
-We assume that you are already familiar with the basic usage of Ferrite. If not, you should
-first take a look at the [Ferrite documentation](https://ferrite-fem.github.io/Ferrite.jl/dev/).
+The documentation assumes that you are already familiar with the basic usage of Ferrite.
+If not, you should first take a look at the [Ferrite documentation](https://ferrite-fem.github.io/Ferrite.jl/dev/).
 Here, only the additional tools are explained.
 
-This high level view of the documentation structure will help you find what you are looking
-for. After a basic introduction on this side, the document is organized as follows:
+After a basic introduction on this side, the document is organized as follows:
 
  - [**Tutorials**](tutorials/index.md) are documented examples which guide you
    through the process of solving partial differential equations with interface terms.
@@ -66,7 +65,8 @@ finite elements. They can be considered as elements with zero thickness and
 two faces (one for each side of the interface).
 
 In FerriteInterfaceElements, their implementation is based on the idea to combine
-two embedded elements to represent the to sides of an interface. To distinguish
+two embedded elements to represent the to sides of an interface. At the current state,
+it is only supported to use the same interpolation on both sides. To distinguish
 the two sides, they are referred to as *here* and *there*. The jump of a
 field is then defined as from *here* to *there*: *field there - field here*.
 

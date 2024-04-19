@@ -1,123 +1,93 @@
 """
-    InterfaceCellValues([::Type{T},] qr::QuadratureRule, func_ip::InterfaceCellInterpolation, [geom_ip::InterfaceCellInterpolation])
+    InterfaceCellValues([::Type{T},] qr::QuadratureRule, func_ip::InterfaceCellInterpolation, [geom_ip::InterfaceCellInterpolation]; use_same_cv=true)
 
-An `InterfaceCellValues` wraps two `CellValues`, one for each face of an `InterfaceCell`.
+An `InterfaceCellValues` is based on two `CellValues`: one for each face of an `InterfaceCell`.
+Since one can use the same `CellValues` for both sides, be default the same object is used for better performance.
+The keyword argument `use_same_cv` can be set to `false` to disable this behavior, if needed.
 
 # Fields
 - `ip::InterfaceCellInterpolation`: interpolation on the interface
-- `here::CellValues`:  values on face "here"
-- `there::CellValues`: values on face "there"
-- `basefunctionshere::Vector{Int}`: base function indices on face "here"
-- `basefunctionsthere::Vector{Int}`: base function indices on face "there"
+- `here::CellValues`:  values for face "here"
+- `there::CellValues`:  values for face "there"
+- `base_indices_here::Vector{Int}`: base function indices on face "here"
+- `base_indices_there::Vector{Int}`: base function indices on face "there"
+- `sides_and_baseindices::Tuple`: side and base function for the base `CellValues` for each base function of the `InterfaceCellValues`
 """
-struct InterfaceCellValues{CVhere, CVthere} <: AbstractCellValues
-    ip::Interpolation
-    here::CVhere
-    there::CVthere
-    basefunctionshere::Vector{Int}
-    basefunctionsthere::Vector{Int}
+struct InterfaceCellValues{CV} <: AbstractCellValues
+    here::CV
+    there::CV
+    base_indices_here::Vector{Int}
+    base_indices_there::Vector{Int}
+    sides_and_baseindices::Tuple
 
-    function InterfaceCellValues(ip::IP, here::CVhere, there::CVthere) where {IP<:Interpolation, CVhere<:CellValues, CVthere<:CellValues}
-        @assert here.qr === there.qr "For `InterfaceCellValues` the underlying `CellValues` need to use the same `QuadratureRule`."
-        sip = ip isa VectorizedInterpolation ? ip.ip : ip
-        basefunctionshere = collect( get_interface_index(sip, :here, i) for i in 1:getnbasefunctions(sip.here) )
-        basefunctionsthere = collect( get_interface_index(sip, :there, i) for i in 1:getnbasefunctions(sip.there) )
-        return new{CVhere, CVthere}(ip, here, there, basefunctionshere, basefunctionsthere)
+    function InterfaceCellValues(ip::IP, here::CV; use_same_cv) where {IP<:InterfaceCellInterpolation, CV<:CellValues}
+        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:getnbasefunctions(ip) )
+        base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
+        base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
+        there = use_same_cv ? here : deepcopy(here)
+        return new{CV}(here, there, base_indices_here, base_indices_there, sides_and_baseindices)
+    end
+
+    function InterfaceCellValues(ip::IP, here::CV; use_same_cv) where {IP<:VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, CV<:CellValues}
+        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:getnbasefunctions(ip) )
+        ip = ip.ip
+        base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
+        base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
+        there = use_same_cv ? here : deepcopy(here)
+        return new{CV}(here, there, base_indices_here, base_indices_there, sides_and_baseindices)
     end
 end
 
-function InterfaceCellValues(qr::QuadratureRule,
-                             ip::Union{InterfaceCellInterpolation, VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}},
-                             gip::Union{InterfaceCellInterpolation, VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}} = default_geometric_interpolation(ip))
-    return InterfaceCellValues(Float64, qr, ip, gip)
-end
+InterfaceCellValues(qr::QuadratureRule, args...; kwargs...) = InterfaceCellValues(Float64, qr, args...; kwargs...)
 
-function InterfaceCellValues(::Type{T}, qr::QuadratureRule, ip::InterfaceCellInterpolation) where {T}
-    return InterfaceCellValues(T, qr, ip, default_geometric_interpolation(ip))
+function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
+            ip::InterfaceCellInterpolation, 
+            ip_geo::VectorizedInterpolation{sdim,<:Any,<:Any,<:InterfaceCellInterpolation} = default_geometric_interpolation(ip); 
+            use_same_cv=true, kwargs...) where {T, sdim}
+    cv = CellValues(T, qr, ip.base, VectorizedInterpolation{sdim}(ip_geo.ip.base); kwargs...)
+    return InterfaceCellValues(ip, cv; use_same_cv=use_same_cv)
 end
-function InterfaceCellValues(::Type{T}, qr::QuadratureRule, ip::VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}) where {T}
-    return InterfaceCellValues(T, qr, ip, default_geometric_interpolation(ip.ip))
+function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
+            ip::VectorizedInterpolation{vdim,<:Any,<:Any,<:InterfaceCellInterpolation}, 
+            ip_geo::VectorizedInterpolation{sdim,<:Any,<:Any,<:InterfaceCellInterpolation} = default_geometric_interpolation(ip); 
+            use_same_cv=true, kwargs...) where {T, vdim, sdim}
+    cv = CellValues(T, qr, VectorizedInterpolation{vdim}(ip.ip.base), 
+                           VectorizedInterpolation{sdim}(ip_geo.ip.base); kwargs...)
+    return InterfaceCellValues(ip, cv; use_same_cv=use_same_cv)
 end
 
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
-                             ip::Union{InterfaceCellInterpolation, VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}}, 
-                             sgip::InterfaceCellInterpolation{shape}) where {T, sdim, shape <: AbstractRefShape{sdim}}
-    return InterfaceCellValues(T, qr, ip, sgip^sdim)
+            ip::InterfaceCellInterpolation, 
+            ip_geo::InterfaceCellInterpolation{shape}; kwargs...) where {T, dim, shape <: AbstractRefShape{dim}}
+    return InterfaceCellValues(T, qr, ip, VectorizedInterpolation{dim}(ip); kwargs...)
+end
+function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
+            ip::VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, 
+            ip_geo::InterfaceCellInterpolation{shape}; kwargs...) where {T, dim, shape <: AbstractRefShape{dim}}
+    return InterfaceCellValues(T, qr, ip, VectorizedInterpolation{dim}(ip.ip); kwargs...)
 end
 
-function InterfaceCellValues(::Type{T}, qr::QR, ip::IP, gip::VGIP) where {
-    T, sdim, rdim, shape <: AbstractRefShape{sdim}, rshape <: AbstractRefShape{rdim},
-    QR  <: QuadratureRule{rshape},
-    IPhere  <: ScalarInterpolation{rshape},
-    IPthere  <: ScalarInterpolation{rshape},
-    IP <: InterfaceCellInterpolation{shape, IPhere, IPthere},
-    GIPhere <: ScalarInterpolation{rshape},
-    GIPthere <: ScalarInterpolation{rshape},
-    GIP <: InterfaceCellInterpolation{shape, GIPhere, GIPthere},
-    VGIP <: VectorizedInterpolation{sdim, shape, <:Any, GIP}
-}
-    here = CellValues(T, qr, ip.here, gip.ip.here^sdim)
-    there = CellValues(T, qr, ip.there, gip.ip.there^sdim)
-    return InterfaceCellValues(ip, here, there)
-end
+Ferrite.getnbasefunctions(cv::InterfaceCellValues) = 2*getnbasefunctions(cv.here)
 
-function InterfaceCellValues(::Type{T}, qr::QR, ip::VIP, gip::VGIP) where {
-    T, sdim, vdim, rdim, shape <: AbstractRefShape{sdim}, rshape <: AbstractRefShape{rdim},
-    QR  <: QuadratureRule{rshape},
-    IPhere  <: ScalarInterpolation{rshape},
-    IPthere  <: ScalarInterpolation{rshape},
-    IP <: InterfaceCellInterpolation{shape, IPhere, IPthere},
-    VIP <: VectorizedInterpolation{vdim, shape, <:Any, IP},
-    GIPhere <: ScalarInterpolation{rshape},
-    GIPthere <: ScalarInterpolation{rshape},
-    GIP <: InterfaceCellInterpolation{shape, GIPhere, GIPthere},
-    VGIP <: VectorizedInterpolation{sdim, shape, <:Any, GIP}
-}
-    here = CellValues(T, qr, ip.ip.here^vdim, gip.ip.here^sdim)
-    there = CellValues(T, qr, ip.ip.there^vdim, gip.ip.there^sdim)
-    return InterfaceCellValues(ip, here, there)
-end
-
-Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords)
-
-function Ferrite.reinit!(cv::InterfaceCellValues, x::AbstractVector{Vec{sdim,T}}) where {sdim, T}
-    reinit!(cv.here, @view x[cv.basefunctionshere])
-    reinit!(cv.there, @view x[cv.basefunctionsthere])
-    return nothing
-end
-
-Ferrite.getnbasefunctions(cv::InterfaceCellValues) = getnbasefunctions(cv.here) + getnbasefunctions(cv.there)
-
-Ferrite.getngeobasefunctions(cv::InterfaceCellValues) = getngeobasefunctions(cv.here) + getngeobasefunctions(cv.there)
+Ferrite.getngeobasefunctions(cv::InterfaceCellValues) = 2*getngeobasefunctions(cv.here)
 
 Ferrite.getnquadpoints(cv::InterfaceCellValues) = getnquadpoints(cv.here)
 
-"""
-    get_side_and_baseindex(cv::InterfaceCellValues, i::Integer)
+Ferrite.shape_value_type(cv::InterfaceCellValues) = shape_value_type(cv.here)
 
-For an `::InterfaceCellValues`: given the base function index `i` return the side (`:here` or `:there`)
-the base function belongs to and the corresponding index for the `CellValues` belonging to that side.
-"""
-function get_side_and_baseindex(cv::InterfaceCellValues, i::Integer)
-    ip = cv.ip
-    nvhere, nvthere = get_n_dofs_on_side(vertexdof_indices, ip, :here), get_n_dofs_on_side(vertexdof_indices, ip, :there)
-    nfhere, nfthere = get_n_dofs_on_side(facedof_interior_indices, ip, :here), get_n_dofs_on_side(facedof_interior_indices, ip, :there)
-    nchere, ncthere = get_n_dofs_on_side(celldof_interior_indices, ip, :here), get_n_dofs_on_side(celldof_interior_indices, ip, :there)
-    if i ≤ nvhere
-        return :here, i
-    elseif i ≤ nvhere + nvthere
-        return :there, i - nvhere
-    elseif i ≤ nvhere + nvthere + nfhere
-        return :here, i - nvthere
-    elseif i ≤ nvhere + nvthere + nfhere + nfthere
-        return :there, i - nvhere - nfhere
-    elseif i ≤ nvhere + nvthere + nfhere + nfthere + nchere
-        return :here, i - nvthere - nfthere
-    elseif i ≤ nvhere + nvthere + nfhere + nfthere + nchere + ncthere
-        return :there, i - nvhere - nfhere - nchere
+Ferrite.shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.here)
+
+Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords) # TODO: Needed?
+
+function Ferrite.reinit!(cv::InterfaceCellValues, x::AbstractVector{Vec{sdim,T}}) where {sdim, T}
+    reinit!(cv.here, @view x[cv.base_indices_here])
+    if cv.here === cv.there
+        reinit!(cv.there, @view x[cv.base_indices_there])
     end
-    throw(ArgumentError("No baseindex for interface index $(i) for interpolation $(ip)."))
+    return nothing
 end
+
+get_side_and_baseindex(cv::InterfaceCellValues, i::Integer) = cv.sides_and_baseindices[i]
 
 """
     get_base_value(get_value::Function, cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
@@ -129,14 +99,13 @@ Return a value from an `::InterfaceCellValues` by specifing:
 - `here`: side of the interface, where `true` means "here" and `false` means "there".
 """
 function get_base_value(get_value::Function, cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
-    side, baseindex = get_side_and_baseindex(cv, i)
+    side, baseindex = cv.sides_and_baseindices[i]
     if side == :here && here
         return get_value(cv.here, qp, baseindex)
     elseif side == :there && ! here
         return get_value(cv.there, qp, baseindex)
-    else
-        return nothing
     end
+    return nothing
 end
 
 """
@@ -174,8 +143,8 @@ Return the value of shape function `i` evaluated in quadrature point `qp`
 for computing the average value on an interface.
 """
 function Ferrite.shape_value_average(cv::InterfaceCellValues, qp::Int, i::Int)
-    side, baseindex = get_side_and_baseindex(cv, i)
-    return side == :here ? shape_value(cv.here, qp, baseindex) / 2 : shape_value(cv.there, qp, baseindex) / 2
+    side, baseindex = cv.sides_and_baseindices[i]
+    return side==:here ? shape_value(cv.here, qp, baseindex) / 2 : shape_value(cv.there, qp, baseindex) / 2
 end
 
 """
@@ -185,7 +154,7 @@ Return the gradient of shape function `i` evaluated in quadrature point `qp`
 for computing the average gradient on an interface.
 """
 function Ferrite.shape_gradient_average(cv::InterfaceCellValues, qp::Int, i::Int)
-    side, baseindex = get_side_and_baseindex(cv, i)
+    side, baseindex = cv.sides_and_baseindices[i]
     return side == :here ? shape_gradient(cv.here, qp, baseindex) / 2 : shape_gradient(cv.there, qp, baseindex) / 2
 end
 
@@ -196,7 +165,7 @@ Return the value of shape function `i` evaluated in quadrature point `qp`
 for computing the value jump on an interface.
 """
 function Ferrite.shape_value_jump(cv::InterfaceCellValues, qp::Int, i::Int)
-    side, baseindex = get_side_and_baseindex(cv, i)
+    side, baseindex = cv.sides_and_baseindices[i]
     return side == :here ? -shape_value(cv.here, qp, baseindex) : shape_value(cv.there, qp, baseindex)
 end
 
@@ -207,12 +176,9 @@ Return the gradient of shape function `i` evaluated in quadrature point `qp`
 for computing the gradient jump on an interface.
 """
 function Ferrite.shape_gradient_jump(cv::InterfaceCellValues, qp::Int, i::Int)
-    side, baseindex = get_side_and_baseindex(cv, i)
+    side, baseindex = cv.sides_and_baseindices[i]
     return side == :here ? -shape_gradient(cv.here, qp, baseindex) : shape_gradient(cv.there, qp, baseindex)
 end
-
-shape_value_type(cv::InterfaceCellValues) = shape_value_type(cv.here)
-shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.here)
 
 """
     function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool)
@@ -298,4 +264,18 @@ Compute the jump of the function gradient in a quadrature point.
 """
 function Ferrite.function_gradient_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
     return function_gradient(cv, qp, u, false) - function_gradient(cv, qp, u, true)
+end
+
+function Base.show(io::IO, d::MIME"text/plain", cv::InterfaceCellValues)
+    if cv.here === cv.there
+        print(io, "InterfaceCellValues based on a single CellValues:\n"); show(io, d, cv.here)
+    else
+        print(io, "InterfaceCellValues based on two different CellValues: ")
+        print(io, "\nHere:\n"); show(io, d, cv.here)
+        print(io, "\nThere:\n"); show(io, d, cv.there)
+    end
+    print(io, "\n+ Additional info:")
+    print(io, "\nBase functions here:  ", cv.base_indices_here)
+    print(io, "\nBase functions there: ", cv.base_indices_there)
+    print(io, "\nSides and indices for base cell values: ", cv.sides_and_baseindices)
 end
