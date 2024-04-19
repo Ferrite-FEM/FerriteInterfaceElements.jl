@@ -2,7 +2,7 @@
 
 ```@contents
 Pages = [
-    "grid.md",
+    "cells.md",
     "interpolations.md",
     "cellvalues.md",
 ]

@@ -31,7 +31,7 @@
 # Note that the two sides of an interface are referred to as "here" and "there".
 # The provided functions use a jump as defined from "here" to "there".
 # So, in this example the particles are to be considered the side "here".
-# (Here, this is not that relevant, since the sign of the jump has no influence
+# (Here, this is not really relevant, since the sign of the jump has no influence
 # on the result in the weak form. In general, this could be relevant.)
 #
 # The resulting weak form is given given as follows: Find ``u \in \mathbb{U}`` such that
@@ -41,7 +41,7 @@
 #  = 0 \quad \forall \delta u \in \mathbb{T},
 # ```
 # where $\delta u$ is a test function, and where $\mathbb{U}$ and $\mathbb{T}$ are suitable
-# trial and test function sets, respectively.
+# trial and test function spaces, respectively.
 #-
 # ## Commented Program
 #
@@ -49,16 +49,15 @@
 # What follows is a program spliced with comments.
 #md # The full program, without comments, can be found in the next [section](@ref heat_equation-plain-program).
 #
-# First we load all the packages we need.
+# First we load all the packages we need for the computation.
 
-using Ferrite, FerriteInterfaceElements, SparseArrays
+using Ferrite, FerriteInterfaceElements, SparseArrays, FerriteGmsh
 
-# We first load the mesh file [`periodic-rve.msh`](periodic-rve.msh)
+# Then, we load the mesh file [`periodic-rve.msh`](periodic-rve.msh)
 # ([`periodic-rve-coarse.msh`](periodic-rve-coarse.msh) for a coarser mesh). The mesh is
 # generated with [`gmsh`](https://gmsh.info/), and we read it in as a `Ferrite` grid using
 # the [`FerriteGmsh`](https://github.com/Ferrite-FEM/FerriteGmsh.jl) package:
 
-using FerriteGmsh
 #src notebook: use coarse mesh to decrease build time
 #src   script: use the fine mesh
 #src markdown: use the coarse mesh to decrease build time, but make it look like the fine
@@ -79,10 +78,10 @@ grid = togrid("periodic-rve.msh") #src
 # To do so, we can use the function `create_interface_cells!`.
 # Note that this function does not insert the `InterfaceCell`s into the grid!
 # (That would require changing the type of `grid.cells`.)
-# The function adds duplicates of nodes on the interface to the grid, disconnects cells
-# of different phases and returns cells which can be used to connect them via interfaces.
+# The function adds duplicates of nodes on the interface to the grid, disconnects bulk cells
+# at the interface and returns cells which can be used to connect them via interfaces.
 
-interface_cells = create_interface_cells!(grid::Grid, "inclusions", "matrix");
+interface_cells = create_interface_cells!(grid, "inclusions", "matrix");
 
 # Now, we create a new grid with all the needed cells. For convenience, we also add a 
 # new cell set with the interface cells.
@@ -109,7 +108,7 @@ cv_bulk = CellValues(qr_bulk, ip_bulk)
 cv_interface = InterfaceCellValues(qr_interface, ip_interface);
 
 # ### Degrees of freedom
-# Next we create the `DofHandler`. Here ones needs distinguish the different types of cells.
+# Next we create the `DofHandler`. Here, one needs distinguish the different types of cells.
 # This can be done by using `SubDofHandlers`.
 
 dh = DofHandler(grid)
@@ -119,7 +118,7 @@ add!(SubDofHandler(dh, set_interface), :u, ip_interface)
 close!(dh);
 
 # ### Boundary conditions
-# To construct a simple example, but be still be able to observe jumps at the interfaces,
+# To construct a simple example and still be able to observe jumps at the interfaces,
 # we fix the temperatur to different values on the particle portion of the boundary.
 
 particles = getcellset(grid, "inclusions")
@@ -128,12 +127,12 @@ particles = getcellset(grid, "inclusions")
 ∂Ωᴾ_top    = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "top"))
 ∂Ωᴾ_bottom = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "bottom"));
 
-# We set up a `ConstraintHandler` with for fixed values on the four sides.
+# We set up a `ConstraintHandler` with fixed values on the four sides.
 
 ch = ConstraintHandler(dh)
-add!(ch, Dirichlet(:u, ∂Ωᴾ_left,   Returns(0.25)))
-add!(ch, Dirichlet(:u, ∂Ωᴾ_right,  Returns(0.75)))
-add!(ch, Dirichlet(:u, ∂Ωᴾ_top,    Returns(0.5)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_left,   Returns(1.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_right,  Returns(1.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_top,    Returns(0.0)))
 add!(ch, Dirichlet(:u, ∂Ωᴾ_bottom, Returns(0.0)))
 close!(ch);
 
@@ -141,7 +140,7 @@ close!(ch);
 #
 # Now we can prepare the assembly of the global system of equations.
 # We start by defining two element assembly functions for the two phases.
-# To distinguish the phases, we use dispatch und the cell value types.
+# To distinguish the phases, we use dispatch on the cell value types.
 
 function assemble_element!(Ke::Matrix, cv::CellValues)
     fill!(Ke, 0)
@@ -224,7 +223,7 @@ end
 # The nex step is to get the nodal temperature values. However, the Ferrite function
 # `evaluate_at_grid_nodes` does not (yet) work for interface elements.
 # Thus, we need to rearrange the solution vector ourselves. Althought it is not the
-# most effiecient way, a simple solution is to iterate over the bulk cells and use the 
+# most efficient way, a simple solution is to iterate over the bulk cells and use the 
 # DOF mapping of each cell.
 
 function get_nodal_temperatures(u::AbstractVector, dh::DofHandler)
