@@ -15,14 +15,8 @@
 
     @test getnbasefunctions(ip) == 18
 
-    #@test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :here, 10)
-    #@test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :there, 10)
-    #@test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :nowhere, 10)
-
     @test Ferrite.vertexdof_indices(ip) == ((1,),(2,),(3,),(4,),(5,),(6,),(7,),(8,))
-    #@test Ferrite.facedof_indices(ip) == ((1,2,3,4,9,10,11,12,17), (5,6,7,8,13,14,15,16,18))
     @test Ferrite.facedof_interior_indices(ip) == ((17,), (18,))
-    #@test Ferrite.edgedof_indices(ip) == ((1,2,9),(2,3,10),(3,4,11),(4,1,12),(5,6,13),(6,7,14),(7,8,15),(8,5,16))
     @test Ferrite.edgedof_interior_indices(ip) == ((9,),(10,),(11,),(12,),(13,),(14,),(15,),(16,))
 
     @test get_side_and_baseindex(ip, 5) == (:there, 1)

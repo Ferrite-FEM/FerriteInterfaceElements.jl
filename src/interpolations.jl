@@ -1,3 +1,5 @@
+Ferrite.facedof_interior_indices(::Lagrange{RefLine}) = Tuple{}() # Hot fix -> TODO: remove as soon as its in Ferrite
+
 # The constructors of `InterpolationInfo` require a `VectorizedInterpolation{InterfaceCellInterpolation}`
 # and not an `InterfaceCellInterpolation{VectorizedInterpolation,VectorizedInterpolation}`.
 # To create a `VectorizedInterpolation{InterfaceCellInterpolation}`, `InterfaceCellInterpolation` needs to be a `ScalarInterpolation`.
@@ -139,25 +141,3 @@ function get_side_and_baseindex(ip::Union{InterfaceCellInterpolation,
     end
     throw(ArgumentError("Index $(i) exeeds number of basefunctions."))
 end
-
-#=
-"""
-    get_interface_dof_indices(get_dofs::Function, ip::InterfaceCellInterpolation) 
-
-Return a tuple of tuples with DOF indices for different entities (vertices, faces, etc.).
-The function `get_dofs` specifies which DOFs are considered, e.g. by passing `vertexdof_indices`.
-"""
-function get_interface_dof_indices(get_dofs::Function, ip::InterfaceCellInterpolation) 
-    here  = get_interface_dof_indices(get_dofs, ip, :here)
-    there = get_interface_dof_indices(get_dofs, ip, :there)
-    return (here..., there...)
-end
-function get_interface_dof_indices(get_dofs::Function, ip::InterfaceCellInterpolation, side::Symbol)
-    basedofs = get_dofs(getproperty(ip, side))
-    if isempty(basedofs)
-        return (Tuple{}(),)
-    else
-        return broadcast.(get_interface_index, ((ip,),), ((side,),), basedofs)
-    end
-end
-=#
