@@ -1,5 +1,4 @@
 using Ferrite, FerriteInterfaceElements, SparseArrays
-Ferrite.facedof_interior_indices(::Lagrange{RefLine}) = Tuple{}() # Hot fix -> TODO: remove ASAP
 
 using FerriteGmsh
 # grid = togrid("periodic-rve-coarse.msh")

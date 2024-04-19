@@ -52,7 +52,6 @@
 # First we load all the packages we need.
 
 using Ferrite, FerriteInterfaceElements, SparseArrays
-Ferrite.facedof_interior_indices(::Lagrange{RefLine}) = Tuple{}() # Hot fix -> TODO: remove ASAP
 
 # We first load the mesh file [`periodic-rve.msh`](periodic-rve.msh)
 # ([`periodic-rve-coarse.msh`](periodic-rve-coarse.msh) for a coarser mesh). The mesh is
