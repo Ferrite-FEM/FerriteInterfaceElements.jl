@@ -12,7 +12,6 @@ import Ferrite: AbstractCell, AbstractRefShape,
 include("cells.jl")
 include("interpolations.jl")
 include("cellvalues.jl")
-include("generate_interfaces.jl")
 
 export
     InterfaceCell,
@@ -28,7 +27,6 @@ export
     function_value_jump,
     function_gradient_jump,
     getdetJdV_average,
-    create_interface_cells!
     insert_interfaces
 
 end

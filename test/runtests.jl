@@ -10,6 +10,4 @@ using Test
     include("test_cellvalues.jl")
 
     include("test_examples.jl")
-
-    include("test_interface_generation.jl")
 end

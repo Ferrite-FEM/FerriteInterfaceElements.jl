@@ -21,47 +21,88 @@
         @test Ferrite.vertices(cell) == (Ferrite.vertices(here)..., Ferrite.vertices(there)...)
         @test Ferrite.faces(cell) == (Ferrite.vertices(here), Ferrite.vertices(there))
     end
-    #=
-    here  = QuadraticQuadrilateral((1,2,3,4,9,10,11,12,17)), 
-    there = QuadraticQuadrilateral((5,6,7,8,13,14,15,16,18))
-    expected = ((:here,1),  (:here,2),  (:here,3),  (:here,4),
-                (:there,1), (:there,2), (:there,3), (:there,4),
-                (:here,5),  (:here,6),  (:here,7),  (:here,8),
-                (:there,5), (:there,6), (:there,7), (:there,8),
-                (:here,9), 
-                (:there,9))
-    @test FerriteInterfaceElements.get_sides_and_base_indices(InterfaceCell(here, there))   == expected
-    @test FerriteInterfaceElements.get_sides_and_base_indices(here, there) == expected
-    =#
 end
 
 @testset "Inserting interfaces in 2D" begin
-    grid = generate_grid(Triangle, (2,2), Vec((-1.0,-1.0)), Vec((1.0,1.0)))
+    # 7 ___ 8 ___ 9              7 ___ 8__14___ 9
+    # |\ c6 |\ c8 |              |\ c6 | c|\ c8 |
+    # |  \  |  \  |              |  \  |11|  \  |
+    # | c5 \| c7 \|              | c5 \|  | c7 \|
+    # 4 ___ 5 ___ 6     --->     13___12__11___10 
+    # |\ c2 |\ c4 |              | c10  \/  c9 |
+    # |  \  |  \  |              4 ___  5  ___ 6
+    # | c1 \| c3 \|              |\ c2  | \ c4 |
+    # 1 ___ 2 ___ 3              |  \   |   \  |
+    #                            | c1 \ |  c3 \|
+    #                            1 ____ 2 ____ 3
+    #
+    grid = generate_grid(Triangle, (2,2))
+    addcellset!(grid, "bottom", Set((1,2,3,4)))
+    addcellset!(grid, "topleft", Set((5,6)))
+    addcellset!(grid, "topright", Set((7,8)))
+
+    domain_names = ["bottom", "topleft", "topright"]
+    new_grid = insert_interfaces(grid, domain_names)
+
+    for (nodeid, duplicate_nodeid) in [(4,13), (5,12), (5,11), (11,12), (6,10), (8,14)]
+        @test new_grid.nodes[nodeid] == new_grid.nodes[duplicate_nodeid]
+    end
+
+    @test new_grid.cells == [
+        Triangle((1, 2, 4)),
+        Triangle((2, 5, 4)),
+        Triangle((2, 3, 5)),
+        Triangle((3, 6, 5)),
+        Triangle((13, 12, 7)),
+        Triangle((12, 8, 7)),
+        Triangle((11, 10, 14)),
+        Triangle((10, 9, 14)),
+        InterfaceCell(Line((6, 5)), Line((10, 11))),
+        InterfaceCell(Line((5, 4)), Line((12, 13))),
+        InterfaceCell(Line((12, 8)), Line((11, 14)))
+        ]
+end
+
+@testset "Inserting interfaces in 3D" begin
+    grid = generate_grid(Hexahedron, (2,2,1))
+    addcellset!(grid, "bottomleft", Set((1,)))
+    addcellset!(grid, "topleft", Set((3,)))
+    addcellset!(grid, "right", Set((2,4)))
     
-    #  7----8----9
-    #  | \6 | \8 |
-    #  | 5\ | 7\ |
-    #  4----5----6
-    #  | \2 | \4 |
-    #  | 1\ | 3\ |
-    #  1----2----3
+    domain_names = ["bottomleft", "topleft", "right"]
+    new_grid = insert_interfaces(grid, domain_names)
 
-    addcellset!(grid, "bottom",  x -> x[2] ≤ 0)
-    addcellset!(grid, "top",     x -> x[2] ≥ 0)
-    addcellset!(grid, "top left",  x -> x[1] ≤ 0 && x[2] ≥ 0)
-    addcellset!(grid, "top right", x -> x[1] ≥ 0 && x[2] ≥ 0)
-
-    newcells = create_interface_cells!(grid, "bottom", "top")
-    @test newcells[1].nodes == (12,10,6,5) # bottom: 4 -> 11, 5 -> 10, 6 -> 12
-    @test newcells[2].nodes == (10,11,5,4)
-    for (i, n) in enumerate(((1,2,11), (2,10,11), (2,3,10), (3,12,10), (4,5,7), (5,8,7), (5,6,8), (6,9,8)))
-        @test grid.cells[i].nodes == n
+    for (nodeid, duplicate_nodeid) in [(13, 25), (14,26), (14,21), (21,26), (11,22), (17,27), (4,24), (5,23), (5,20), (20,23), (8, 28), (2,19)]
+        @test new_grid.nodes[nodeid] == new_grid.nodes[duplicate_nodeid]
     end
-    grid = Grid(vcat(grid.cells, newcells), grid.nodes; cellsets=grid.cellsets)
 
-    newcells = create_interface_cells!(grid, "top left", "top right")
-    @test newcells[1].nodes == (13,14,5,8) # top left: 5 -> 13, 8 -> 14
-    for (i, n) in enumerate(((1,2,11), (2,10,11), (2,3,10), (3,12,10), (4,13,7), (13,14,7), (5,6,8), (6,9,8), (12,10,6,5), (10,11,13,4)))
-        @test grid.cells[i].nodes == n
-    end
+    @test new_grid.cells ==  [
+        Hexahedron((1, 2, 5, 4, 10, 11, 14, 13)),
+        Hexahedron((19, 3, 6, 20, 22, 12, 15, 21)),
+        Hexahedron((24, 23, 28, 7, 25, 26, 27, 16)),
+        Hexahedron((20, 6, 9, 8, 21, 15, 18, 17)),
+        InterfaceCell(Quadrilateral((2, 5, 14, 11)), Quadrilateral((19, 20, 21, 22))),
+        InterfaceCell(Quadrilateral((5, 4, 13, 14)), Quadrilateral((23, 24, 25, 26))),
+        InterfaceCell(Quadrilateral((20, 21, 17, 8)), Quadrilateral((23, 26, 27, 28)))
+        ]
+
+    # More complex example with rough test
+    grid = generate_grid(Tetrahedron, (10,10,10), Vec((-0.5,-0.5,-0.5)), Vec((0.5,0.5,0.5)))
+    addcellset!(grid, "1", x -> true)
+    set1 = getcellset(grid, "1")
+    addcellset!(grid, "2", x -> (-0.3 ≤ x[1] ≤ 0.3) &&
+                                (-0.3 ≤ x[2] ≤ 0.3) &&
+                                (-0.3 ≤ x[3] ≤ 0.3))
+    set2 = getcellset(grid, "2")
+    addcellset!(grid, "3", x -> ((-0.1 ≤ x[1] ≤ 0.1) && (-0.1 ≤ x[2] ≤ 0.1)) ||
+                                ((-0.1 ≤ x[1] ≤ 0.1) && (-0.1 ≤ x[3] ≤ 0.1)) ||
+                                ((-0.1 ≤ x[2] ≤ 0.1) && (-0.1 ≤ x[3] ≤ 0.1)))
+    set3 = getcellset(grid, "3")
+    setdiff!(set1, set2, set3)
+    setdiff!(set3, set2)
+
+    newgrid = insert_interfaces(grid, ["1", "2", "3"])
+    @test length(getcells(newgrid, "1-2-interface")) == 384
+    @test length(getcells(newgrid, "1-3-interface")) == 192
+    @test length(getcells(newgrid, "2-3-interface")) == 48
 end
