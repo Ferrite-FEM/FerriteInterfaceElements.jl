@@ -1,6 +1,6 @@
 function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
-    cellsets = Dict(name=>getcellset(grid, name) for name in domain_names)
-    node_mapping = Dict(name => Dict{Int, Int}() for name in domain_names)
+    cellsets = Dict(name => getcellset(grid, name) for name in domain_names)
+    node_mapping = Dict(name => Dict{Int, Int}()   for name in domain_names)
 
     nodes = copy(grid.nodes)
     cells_generic = Vector{Ferrite.AbstractCell}(grid.cells) # copies
@@ -42,8 +42,7 @@ function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
                         _new_nodeids = Tuple(node_mapping[_name][i] for i in facenodeids)
                         # generate new cell
                         @assert typeof(cell) == typeof(getcells(grid, _cellid))
-                        interface_nodes = (new_nodeids..., _new_nodeids...)
-                        interface_cell = create_interface_cell(typeof(cell), interface_nodes)
+                        interface_cell = create_interface_cell(typeof(cell), new_nodeids, _new_nodeids)
                         push!(cells_generic, interface_cell)
                     end
                 end
@@ -71,14 +70,13 @@ function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
     return new_grid
 end
 
-# TODO: needs to be replaced by FerriteInterfaceElements cells
-function create_interface_cell(::Type{C}, nodes) where C
-    interface_celltype = get_interface_celltype(C)
-    return interface_celltype(nodes)
+function create_interface_cell(::Type{C}, nodes_here, nodes_there) where C
+    Cbase = get_interface_base_cell_type(C)
+    return InterfaceCell(Cbase(nodes_here), Cbase(nodes_there))
 end
-get_interface_celltype(::Type{Triangle}) = CohesiveQuadrilateral
-get_interface_celltype(::Type{QuadraticTriangle}) = CohesiveQuadraticQuadrilateral
-get_interface_celltype(::Type{Quadrilateral}) = CohesiveQuadrilateral
-get_interface_celltype(::Type{QuadraticQuadrilateral}) = CohesiveQuadraticQuadrilateral
-get_interface_celltype(::Type{Tetrahedron}) = CohesiveWedge
-get_interface_celltype(::Type{Hexahedron}) = CohesiveHexahedron
+get_interface_base_cell_type(::Type{Triangle}) = Line
+get_interface_base_cell_type(::Type{QuadraticTriangle}) = QuadraticLine
+get_interface_base_cell_type(::Type{Quadrilateral}) = Line
+get_interface_base_cell_type(::Type{QuadraticQuadrilateral}) = QuadraticLine
+get_interface_base_cell_type(::Type{Tetrahedron}) = Triangle
+get_interface_base_cell_type(::Type{Hexahedron}) = Quadrilateral
