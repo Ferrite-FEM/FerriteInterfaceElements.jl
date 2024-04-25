@@ -1,6 +1,16 @@
 function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
     cellsets = Dict(name => getcellset(grid, name) for name in domain_names)
-    node_mapping = Dict(name => Dict{Int, Int}()   for name in domain_names)
+    pairs = Set{Pair{String,Set{Int}}}() # prepare a cellset for each interface between domains
+    for i in eachindex(domain_names)
+        for j in i+1:length(domain_names)
+            set = Set{Int}()
+            # add the set with two names to allow for both orders of domain names
+            push!(pairs, "$(domain_names[i])-$(domain_names[j])-interface" => set)
+            push!(pairs, "$(domain_names[j])-$(domain_names[i])-interface" => set)
+        end
+    end
+    interfacesets = Dict(pairs)
+    node_mapping = Dict(name => Dict{Int, Int}() for name in domain_names)
 
     nodes = copy(grid.nodes)
     cells_generic = Vector{Ferrite.AbstractCell}(grid.cells) # copies
@@ -44,6 +54,7 @@ function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
                         @assert typeof(cell) == typeof(getcells(grid, _cellid))
                         interface_cell = create_interface_cell(typeof(cell), new_nodeids, _new_nodeids)
                         push!(cells_generic, interface_cell)
+                        push!(interfacesets["$(name)-$(_name)-interface"], length(cells_generic))
                     end
                 end
             end
@@ -63,7 +74,7 @@ function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
         end
     end
 
-    new_cellsets = merge(grid.cellsets, Dict("interfaces"=>Set((length(grid.cells)+1):length(cells))))
+    new_cellsets = merge(grid.cellsets, Dict("interfaces"=>Set((length(grid.cells)+1):length(cells))), interfacesets)
     # nodesets might no longer be valid
     new_nodesets = Dict{String, Set{Int}}()
     new_grid = Grid(cells, nodes, new_cellsets, new_nodesets, grid.facesets, grid.edgesets, grid.vertexsets, grid.boundary_matrix)
