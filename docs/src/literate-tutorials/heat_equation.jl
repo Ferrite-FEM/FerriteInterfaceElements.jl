@@ -75,23 +75,14 @@ grid = togrid("periodic-rve.msh") #src
 
 # So far, this mesh only contains standard cells for the bulk phases.
 # Thus, we need to insert `InterfaceCell`s at the faces between cells in different phases.
-# To do so, we can use the function `create_interface_cells!`.
-# Note that this function does not insert the `InterfaceCell`s into the grid!
-# (That would require changing the type of `grid.cells`.)
-# The function adds duplicates of nodes on the interface to the grid, disconnects bulk cells
-# at the interface and returns cells which can be used to connect them via interfaces.
+# To do so, we can use the function `insert_interfaces`.
+# This function creates a new grid with interfaces between subdomains which are defined by
+# names of cellsets which are passed as arguments.
+# The resulting grid includes new cellsets: `"interfaces"` for all interfaces and
+# `domain1-domain2-interface"` for interfaces between each pair of subdomains.
+# Note that original cell and face sets are preserved, however, node sets are not.
 
-interface_cells = create_interface_cells!(grid, "inclusions", "matrix");
-
-# Now, we create a new grid with all the needed cells. For convenience, we also add a 
-# new cell set with the interface cells.
-
-n_bulk_cells = length(grid.cells)
-n_interface_cells = length(interface_cells)
-set_interface = Set{Int}(n_bulk_cells + 1 : n_bulk_cells + n_interface_cells)
-
-grid = Grid(vcat(grid.cells, interface_cells), grid.nodes; cellsets=grid.cellsets, facesets=grid.facesets)
-addcellset!(grid, "interface", set_interface);
+grid = insert_interfaces(grid, ["inclusions", "matrix"]);
 
 # ### Trial and test functions
 # First, we define an interpolation and a quadrature rule for both bulk and interface cells.
@@ -113,6 +104,7 @@ cv_interface = InterfaceCellValues(qr_interface, ip_interface);
 
 dh = DofHandler(grid)
 set_bulk = union(getcellset(grid, "inclusions"), getcellset(grid, "matrix"))
+set_interface = getcellset(grid, "interfaces")
 add!(SubDofHandler(dh, set_bulk),      :u, ip_bulk)
 add!(SubDofHandler(dh, set_interface), :u, ip_interface)
 close!(dh);

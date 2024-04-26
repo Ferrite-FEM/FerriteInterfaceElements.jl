@@ -1,4 +1,4 @@
-# Cells
+# Cells and grid
 
 ## Working with interface cells
 
@@ -10,13 +10,6 @@ FerriteInterfaceElements.get_sides_and_base_indices
 ## Inserting interface cells into a grid
 
 ```@docs
-FerriteInterfaceElements.find_interfaces
-FerriteInterfaceElements.insert_duplicate_nodes!
-FerriteInterfaceElements.face_node_indices
-FerriteInterfaceElements.create_face_cell
 FerriteInterfaceElements.create_interface_cell
-FerriteInterfaceElements.create_interface_cells
-FerriteInterfaceElements.collect_cells_to_be_adapted
-FerriteInterfaceElements.adapt_cell
-FerriteInterfaceElements.adapt_cells!
+FerriteInterfaceElements.get_interface_base_cell_type
 ```

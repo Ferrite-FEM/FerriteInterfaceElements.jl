@@ -12,6 +12,7 @@ import Ferrite: AbstractCell, AbstractRefShape,
 include("cells.jl")
 include("interpolations.jl")
 include("cellvalues.jl")
+include("grid.jl")
 
 export
     InterfaceCell,
