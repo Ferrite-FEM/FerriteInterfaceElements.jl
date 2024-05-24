@@ -22,7 +22,7 @@
     @test get_side_and_baseindex(ip, 5) == (:there, 1)
     @test_throws ArgumentError get_side_and_baseindex(ip, 19)
 
-    testcelltype = InterfaceCell{RefQuadrilateral, Line}
+    testcelltype = InterfaceCell{RefQuadrilateral, Line, 4}
     expectedtype = InterfaceCellInterpolation{RefQuadrilateral, 1, Lagrange{RefLine,1,Nothing}}
     @test Ferrite.default_interpolation(testcelltype) isa expectedtype
     @test Ferrite.default_geometric_interpolation(Ferrite.default_interpolation(testcelltype)) isa VectorizedInterpolation{2, RefQuadrilateral, <:Any, expectedtype}

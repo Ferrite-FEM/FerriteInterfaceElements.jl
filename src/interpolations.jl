@@ -52,7 +52,7 @@ function Ferrite.facedof_interior_indices(ip::InterfaceCellInterpolation{<:Abstr
     return (here, there)
 end
 
-function Ferrite.default_interpolation(::Type{InterfaceCell{shape, C}}) where {shape<:AbstractRefShape, C} 
+function Ferrite.default_interpolation(::Type{InterfaceCell{shape, C, N}}) where {shape<:AbstractRefShape, C, N} 
     return InterfaceCellInterpolation(default_interpolation(C))
 end
 
