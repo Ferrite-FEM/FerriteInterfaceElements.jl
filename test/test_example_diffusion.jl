@@ -44,8 +44,8 @@ end
     close!(dh)
     
     ch = ConstraintHandler(dh)
-    add!(ch, Dirichlet(:c, getfaceset(grid, "∂Ωₗ"), (x,t) -> 3.0))
-    add!(ch, Dirichlet(:c, getfaceset(grid, "∂Ωᵣ"), (x,t) -> 0.0))
+    add!(ch, Dirichlet(:c, getfacetset(grid, "∂Ωₗ"), (x,t) -> 3.0))
+    add!(ch, Dirichlet(:c, getfacetset(grid, "∂Ωᵣ"), (x,t) -> 0.0))
     close!(ch)
     
     K = create_sparsity_pattern(dh, ch)
@@ -66,11 +66,11 @@ end
     
     expectedvalue = 3.0
     testinput = dim == 2 ? ((:left,4,2), (:interface,1,2), (:right,4,2)) : ((:left,5,3), (:interface,1,2), (:right,5,3))
-    for (i, (key, leftface, rightface)) in enumerate(testinput)
+    for (i, (key, leftfacet, rightfacet)) in enumerate(testinput)
         dofs = celldofs(dh, i)
-        faceindices = Ferrite.facedof_indices(ip[key])
-        leftdofs  = dofs[[faceindices[leftface]...]]
-        rightdofs = dofs[[faceindices[rightface]...]]
+        facetindices = Ferrite.facetdof_indices(ip[key])
+        leftdofs  = dofs[[facetindices[leftfacet]...]]
+        rightdofs = dofs[[facetindices[rightfacet]...]]
         
         @test all(u[leftdofs]  .≈ expectedvalue)
         @test all(u[rightdofs] .≈ expectedvalue-1)

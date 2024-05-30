@@ -1,7 +1,7 @@
 """
     InterfaceCell(here::AbstractCell, there::AbstractCell) <: AbstractCell
 
-An `InterfaceCell` is a cell based on two cells of lower dimension representing the two faces.
+An `InterfaceCell` is a cell based on two cells of lower dimension representing the two facets.
 The two base cells need to be of the same type and the order of nodes needs to match, e.g.:
 ```
 1---2 "here"
@@ -10,9 +10,9 @@ InterfaceCell(Line((1,2)), Line((4,3)))
 ```
 
 # Fields
-- `here::AbstractCell`: cell representing the face "here"
-- `there::AbstractCell`: cell representing the face "there"
-- `nodes`::NTuple: tuple with all node indices in appropriate order: vertex nodes "here", vertex nodes "there", face nodes "here", ...
+- `here::AbstractCell`: cell representing the facet "here"
+- `there::AbstractCell`: cell representing the facet "there"
+- `nodes`::NTuple: tuple with all node indices in appropriate order: vertex nodes "here", vertex nodes "there", facet nodes "here", ...
 """
 struct InterfaceCell{shape, C, N} <: AbstractCell{shape}
     here::C
@@ -64,5 +64,6 @@ get_sides_and_base_indices(::Type{Quadrilateral}) = ((:here,1), (:here,2), (:her
 get_sides_and_base_indices(::Type{QuadraticQuadrilateral}) = ((:here,1), (:here,2), (:here,3), (:here,4), (:there,1), (:there,2), (:there,3), (:there,4), (:here,5), (:here,6), (:here,7), (:here,8), (:there,5), (:there,6), (:there,7), (:there,8), (:here,9), (:there,9))
 
 Ferrite.vertices(c::InterfaceCell) = (vertices(c.here)..., vertices(c.there)...)
-Ferrite.faces(c::InterfaceCell) = (vertices(c.here), vertices(c.there))
-Ferrite.edges(c::InterfaceCell) = (faces(c.here)..., faces(c.there)...)
+Ferrite.edges(c::InterfaceCell) = (edges(c.here)..., edges(c.there)...)
+Ferrite.faces(c::InterfaceCell{shape}) where {shape<:Ferrite.AbstractRefShape{3}} = (vertices(c.here), vertices(c.there))
+Ferrite.facets(c::InterfaceCell) = (vertices(c.here), vertices(c.there))

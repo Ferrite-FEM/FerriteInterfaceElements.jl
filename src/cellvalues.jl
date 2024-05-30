@@ -1,16 +1,16 @@
 """
     InterfaceCellValues([::Type{T},] qr::QuadratureRule, func_ip::InterfaceCellInterpolation, [geom_ip::InterfaceCellInterpolation]; use_same_cv=true)
 
-An `InterfaceCellValues` is based on two `CellValues`: one for each face of an `InterfaceCell`.
+An `InterfaceCellValues` is based on two `CellValues`: one for each facet of an `InterfaceCell`.
 Since one can use the same `CellValues` for both sides, be default the same object is used for better performance.
 The keyword argument `use_same_cv` can be set to `false` to disable this behavior, if needed.
 
 # Fields
 - `ip::InterfaceCellInterpolation`: interpolation on the interface
-- `here::CellValues`:  values for face "here"
-- `there::CellValues`:  values for face "there"
-- `base_indices_here::Vector{Int}`: base function indices on face "here"
-- `base_indices_there::Vector{Int}`: base function indices on face "there"
+- `here::CellValues`:  values for facet "here"
+- `there::CellValues`:  values for facet "there"
+- `base_indices_here::Vector{Int}`: base function indices on facet "here"
+- `base_indices_there::Vector{Int}`: base function indices on facet "there"
 - `sides_and_baseindices::Tuple`: side and base function for the base `CellValues` for each base function of the `InterfaceCellValues`
 """
 struct InterfaceCellValues{CV} <: AbstractCellValues
@@ -65,6 +65,17 @@ function InterfaceCellValues(::Type{T}, qr::QuadratureRule,
             ip::VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, 
             ip_geo::InterfaceCellInterpolation{shape}; kwargs...) where {T, dim, shape <: AbstractRefShape{dim}}
     return InterfaceCellValues(T, qr, ip, VectorizedInterpolation{dim}(ip.ip); kwargs...)
+end
+
+function Ferrite.default_geometric_interpolation(::Type{InterfaceCell{shape, C, N}}) where {shape<:AbstractRefShape, C, N} 
+    return InterfaceCellInterpolation(geometric_interpolation(C))
+end
+
+function Ferrite.default_geometric_interpolation(ip::InterfaceCellInterpolation{<:AbstractRefShape{sdim}, <:Any, IP}) where {sdim, IP<:ScalarInterpolation}
+    return VectorizedInterpolation{sdim}(InterfaceCellInterpolation(ip.base))
+end
+function Ferrite.default_geometric_interpolation(ip::VectorizedInterpolation{<:Any, <:Any, <:Any, <:InterfaceCellInterpolation})
+    return ip
 end
 
 Ferrite.getnbasefunctions(cv::InterfaceCellValues) = 2*getnbasefunctions(cv.here)
