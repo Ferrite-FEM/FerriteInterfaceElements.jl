@@ -3,14 +3,7 @@ using Ferrite, FerriteInterfaceElements, SparseArrays, FerriteGmsh
 # grid = togrid("periodic-rve-coarse.msh")
 grid = togrid("periodic-rve.msh")
 
-interface_cells = create_interface_cells!(grid, "inclusions", "matrix");
-
-n_bulk_cells = length(grid.cells)
-n_interface_cells = length(interface_cells)
-set_interface = Set{Int}(n_bulk_cells + 1 : n_bulk_cells + n_interface_cells)
-
-grid = Grid(vcat(grid.cells, interface_cells), grid.nodes; cellsets=grid.cellsets, facesets=grid.facesets)
-addcellset!(grid, "interface", set_interface);
+grid = insert_interfaces(grid, ["inclusions", "matrix"]);
 
 ip_bulk = Lagrange{RefTriangle, 1}()
 ip_interface = InterfaceCellInterpolation(Lagrange{RefLine, 1}())
@@ -23,6 +16,7 @@ cv_interface = InterfaceCellValues(qr_interface, ip_interface);
 
 dh = DofHandler(grid)
 set_bulk = union(getcellset(grid, "inclusions"), getcellset(grid, "matrix"))
+set_interface = getcellset(grid, "interfaces")
 add!(SubDofHandler(dh, set_bulk),      :u, ip_bulk)
 add!(SubDofHandler(dh, set_interface), :u, ip_interface)
 close!(dh);
