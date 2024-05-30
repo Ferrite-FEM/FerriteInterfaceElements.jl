@@ -9,5 +9,7 @@ using Test
 
     include("test_cellvalues.jl")
 
+    include("test_grid.jl")
+
     include("test_examples.jl")
 end

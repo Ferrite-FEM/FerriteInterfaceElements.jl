@@ -8,7 +8,12 @@ import Ferrite: AbstractCell, AbstractRefShape,
     adjust_dofs_during_distribution, default_interpolation, default_geometric_interpolation,
     checkbounds, checkquadpoint, function_value_init, function_gradient_init,
     shape_value_type, shape_gradient_type
-    
+
+include("cells.jl")
+include("interpolations.jl")
+include("cellvalues.jl")
+include("grid.jl")
+
 export
     InterfaceCell,
     InterfaceCellInterpolation,
@@ -23,12 +28,6 @@ export
     function_value_jump,
     function_gradient_jump,
     getdetJdV_average,
-    create_interface_cells!
-
-include("cells.jl")
-
-include("interpolations.jl")
-
-include("cellvalues.jl")
+    insert_interfaces
 
 end

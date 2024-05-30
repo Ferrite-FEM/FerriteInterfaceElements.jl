@@ -1,6 +1,6 @@
-# Cells
+# Cells and grid
 
 ```@docs
 InterfaceCell
-create_interface_cells!
+insert_interfaces
 ```
