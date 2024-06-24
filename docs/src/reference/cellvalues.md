@@ -2,10 +2,10 @@
 
 ```@docs
 InterfaceCellValues
-Ferrite.shape_value(cv::InterfaceCellValues, qp::Int, i::Int; here::Bool)
-Ferrite.shape_gradient(cv::InterfaceCellValues, qp::Int, i::Int; here::Bool)
-Ferrite.function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, dof_range=eachindex(u); here::Bool)
-Ferrite.function_gradient(cv::InterfaceCellValues, qp::Int, u::AbstractVector, dof_range=eachindex(u); here::Bool)
+Ferrite.shape_value(cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
+Ferrite.shape_gradient(cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
+Ferrite.function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool, dof_range = eachindex(u))
+Ferrite.function_gradient(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool, dof_range = eachindex(u))
 shape_value_average
 shape_gradient_average
 shape_value_jump
