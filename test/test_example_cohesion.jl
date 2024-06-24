@@ -48,11 +48,11 @@ end
     
     ch = ConstraintHandler(dh)
     if dim == 2
-        add!(ch, Dirichlet(:u, getfaceset(grid, "∂Ωₗ"), (x,t) -> [0.0, 1.0], [1,2]))
-        add!(ch, Dirichlet(:u, getfaceset(grid, "∂Ωᵣ"), (x,t) -> [2.0, 1.0], [1,2]))
+        add!(ch, Dirichlet(:u, getfacetset(grid, "∂Ωₗ"), (x,t) -> [0.0, 1.0], [1,2]))
+        add!(ch, Dirichlet(:u, getfacetset(grid, "∂Ωᵣ"), (x,t) -> [2.0, 1.0], [1,2]))
     elseif dim == 3
-        add!(ch, Dirichlet(:u, getfaceset(grid, "∂Ωₗ"), (x,t) -> [0.0, 1.0, 0.0], [1,2,3]))
-        add!(ch, Dirichlet(:u, getfaceset(grid, "∂Ωᵣ"), (x,t) -> [2.0, 1.0, 0.0], [1,2,3]))
+        add!(ch, Dirichlet(:u, getfacetset(grid, "∂Ωₗ"), (x,t) -> [0.0, 1.0, 0.0], [1,2,3]))
+        add!(ch, Dirichlet(:u, getfacetset(grid, "∂Ωᵣ"), (x,t) -> [2.0, 1.0, 0.0], [1,2,3]))
     end
     close!(ch)
     
@@ -73,11 +73,11 @@ end
     u = K \ f
 
     testinput = dim == 2 ? ((:left,4,2,0,1), (:interface,1,2,1,1), (:right,4,2,1,2)) : ((:left,5,3,0,1), (:interface,1,2,1,1), (:right,5,3,1,2))
-    for (i, (key, leftface, rightface, leftx, rightx)) in enumerate(testinput)
+    for (i, (key, leftfacet, rightfacet, leftx, rightx)) in enumerate(testinput)
         dofs = celldofs(dh, i)
-        faceindices = Ferrite.facedof_indices(ip[key])
-        leftdofs  = dofs[[faceindices[leftface]...]]
-        rightdofs = dofs[[faceindices[rightface]...]]
+        facetindices = Ferrite.facetdof_indices(ip[key])
+        leftdofs  = dofs[[facetindices[leftfacet]...]]
+        rightdofs = dofs[[facetindices[rightfacet]...]]
         
         test_coordinate(given, expected) = abs(given - expected) ≤ 1e-5
             # x coordinates

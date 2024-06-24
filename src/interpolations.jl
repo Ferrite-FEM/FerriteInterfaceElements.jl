@@ -1,4 +1,4 @@
-Ferrite.facedof_interior_indices(::Lagrange{RefLine}) = Tuple{}() # Hot fix -> TODO: remove as soon as its in Ferrite
+#Ferrite.facedof_interior_indices(::Lagrange{RefLine}) = Tuple{}() # Hot fix -> TODO: remove as soon as its in Ferrite
 
 # The constructors of `InterpolationInfo` require a `VectorizedInterpolation{InterfaceCellInterpolation}`
 # and not an `InterfaceCellInterpolation{VectorizedInterpolation,VectorizedInterpolation}`.
@@ -8,7 +8,7 @@ Ferrite.facedof_interior_indices(::Lagrange{RefLine}) = Tuple{}() # Hot fix -> T
     InterfaceCellInterpolation(ip::ScalarInterpolation) <: ScalarInterpolation
 
 An `InterfaceCellInterpolation` is based on a regular interpolation which will be applied 
-to both faces of an `InterfaceCell`.
+to both facets of an `InterfaceCell`.
 
 # Fields
 - `base::ScalarInterpolation`: base interpolation
@@ -30,37 +30,31 @@ Ferrite.n_components(ip::InterfaceCellInterpolation) = n_components(ip.base)
 
 function Ferrite.vertexdof_indices(ip::InterfaceCellInterpolation)
     here  = Ferrite.vertexdof_indices(ip.base)
-    there = map(v -> map(d -> d + _nvertexdofs(ip.base), v), here)
+    offset = _nvertexdofs(ip.base)
+    there = map(v -> map(d -> d + offset, v), here)
     return (here..., there...)
 end
 
-function Ferrite.edgedof_interior_indices(ip::InterfaceCellInterpolation{<:AbstractRefShape{3}})
-    basedofs = Ferrite.facedof_interior_indices(ip.base)
+function Ferrite.edgedof_interior_indices(ip::InterfaceCellInterpolation{<:AbstractRefShape{dim}}) where {dim}
+    basedofs = Ferrite.edgedof_interior_indices(ip.base)
     offset = _nvertexdofs(ip.base)
     here  = map(v -> map(d -> d + offset, v), basedofs)
-    offset += _nfacedofs(ip.base)
+    offset += length(basedofs)
     there = map(v -> map(d -> d + offset, v), basedofs)
     return (here..., there...)
 end
 
-function Ferrite.facedof_interior_indices(ip::InterfaceCellInterpolation{<:AbstractRefShape{dim}}) where {dim}
-    basedofs = Ferrite.celldof_interior_indices(ip.base)
-    offset = _nvertexdofs(ip.base) + (dim == 3 ? _nedgedofs(ip.base) : 0)
-    here  = map(v -> map(d -> d + offset, v), basedofs)
-    offset += _ncelldofs(ip.base)
-    there = map(v -> map(d -> d + offset, v), basedofs)
+function Ferrite.facedof_interior_indices(ip::InterfaceCellInterpolation{<:AbstractRefShape{3}})
+    basedofs = Ferrite.facedof_interior_indices(ip.base)
+    @assert length(basedofs) == 1 "In 3D an `InterfaceCellInterpolation` is based on a 2D interpolation (with only a single face)."
+    if isempty(basedofs[1])
+        return (basedofs[1], basedofs[1])
+    end
+    offset = _nvertexdofs(ip.base) + _nedgedofs(ip.base)
+    here  = map(dofs -> map(d -> d + offset, dofs), basedofs)
+    offset += length(basedofs)
+    there = map(dofs -> map(d -> d + offset, dofs), basedofs)
     return (here, there)
-end
-
-function Ferrite.default_interpolation(::Type{InterfaceCell{shape, C, N}}) where {shape<:AbstractRefShape, C, N} 
-    return InterfaceCellInterpolation(default_interpolation(C))
-end
-
-function Ferrite.default_geometric_interpolation(ip::InterfaceCellInterpolation{<:AbstractRefShape{sdim}, <:Any, IP}) where {sdim, IP<:ScalarInterpolation}
-    return VectorizedInterpolation{sdim}(InterfaceCellInterpolation(ip.base))
-end
-function Ferrite.default_geometric_interpolation(ip::VectorizedInterpolation{<:Any, <:Any, <:Any, <:InterfaceCellInterpolation})
-    return ip
 end
 
 #########################################################
@@ -71,15 +65,14 @@ _ndofs(dofs::Tuple) = isempty(dofs) ? 0 : sum(idxs -> length(idxs), dofs)
 _nvertexdofs(ip) = _ndofs(Ferrite.vertexdof_indices(ip))
 _nedgedofs(ip) = _ndofs(Ferrite.edgedof_interior_indices(ip))
 _nfacedofs(ip) = _ndofs(Ferrite.facedof_interior_indices(ip))
-_ncelldofs(ip) = _ndofs(Ferrite.celldof_interior_indices(ip))
 
 _nvertexdofs_perside(ip::InterfaceCellInterpolation) = _nvertexdofs(ip.base)
+_nedgedofs_perside(ip::InterfaceCellInterpolation) = _nedgedofs(ip.base)
 _nfacedofs_perside(ip::InterfaceCellInterpolation) = _nfacedofs(ip.base)
-_ncelldofs_perside(ip::InterfaceCellInterpolation) = _ncelldofs(ip.base)
 
 _nvertexdofs_perside(ip::VectorizedInterpolation{dim,<:Any,<:Any,<:InterfaceCellInterpolation}) where {dim} = dim*_nvertexdofs(ip.ip.base)
-_nfacedofs_perside(ip::VectorizedInterpolation{dim,<:Any,<:Any,<:InterfaceCellInterpolation}) where {dim} = dim*_nfacedofs(ip.ip.base)
-_ncelldofs_perside(ip::VectorizedInterpolation{dim,<:Any,<:Any,<:InterfaceCellInterpolation}) where {dim} = dim*_ncelldofs(ip.ip.base)
+_nedgedofs_perside(ip::VectorizedInterpolation{dim,<:Any,<:Any,<:InterfaceCellInterpolation}) where {dim} = dim*_nedgedofs(ip.ip.base)
+_nfacedofs_perside(ip::VectorizedInterpolation{dim,<:Any,<:Any,<:InterfaceCellInterpolation}) where {dim}  = dim*_nfacedofs(ip.ip.base)
 
 """
     get_interface_index(ip::InterfaceCellInterpolation, side::Symbol, i::Integer)
@@ -89,24 +82,24 @@ and the local base function index `i` on that face.
 """
 function get_interface_index(ip::InterfaceCellInterpolation, side::Symbol, i::Integer)
     nv = _nvertexdofs(ip.base)
+    ne = _nedgedofs(ip.base)
     nf = _nfacedofs(ip.base)
-    nc = _ncelldofs(ip.base)
     if side == :here
         if i ≤ nv
             return i
-        elseif i ≤ nv + nf
+        elseif i ≤ nv + ne
             return i + nv
-        elseif i ≤ nv + nf + nc
-            return i + nv + nf
+        elseif i ≤ nv + ne + nf
+            return i + nv + ne
         end
         throw(ArgumentError("No interface index for base index $(i) on side $(side) for interpolation $(ip)."))
     elseif side == :there
         if i ≤ nv
             return i + nv
-        elseif i ≤ nv + nf
-            return i + nv + nf
-        elseif i ≤ nv + nf + nc
-            return i + nv + nf + nc
+        elseif i ≤ nv + ne
+            return i + nv + ne
+        elseif i ≤ nv + ne + nf
+            return i + nv + ne + nf
         end
         throw(ArgumentError("No interface index for base index $(i) on side $(side) for interpolation $(ip)."))
     end
@@ -124,20 +117,20 @@ function get_side_and_baseindex(ip::Union{InterfaceCellInterpolation,
                                           VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}},
                                 i::Integer)
     nv = _nvertexdofs_perside(ip)
+    ne = _nedgedofs_perside(ip)
     nf = _nfacedofs_perside(ip)
-    nc = _ncelldofs_perside(ip)
     if i ≤ nv
         return :here, i
     elseif i ≤ 2*nv
         return :there, i - nv
-    elseif i ≤ 2*nv + nf
+    elseif i ≤ 2*nv + ne
         return :here, i - nv
-    elseif i ≤ 2*nv + 2*nf
-        return :there, i - nv - nf
-    elseif i ≤ 2*nv + 2*nf + nc
-        return :here, i - nv - nf
-    elseif i ≤ 2*nv + 2*nf + 2*nc
-        return :there, i - nv - nf - nc
+    elseif i ≤ 2*nv + 2*ne
+        return :there, i - nv - ne
+    elseif i ≤ 2*nv + 2*ne + nf
+        return :here, i - nv - ne
+    elseif i ≤ 2*nv + 2*ne + 2*nf
+        return :there, i - nv - ne - nf
     end
     throw(ArgumentError("Index $(i) exeeds number of basefunctions."))
 end

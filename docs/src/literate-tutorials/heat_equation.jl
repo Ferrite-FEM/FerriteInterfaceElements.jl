@@ -114,10 +114,10 @@ close!(dh);
 # we fix the temperatur to different values on the particle portion of the boundary.
 
 particles = getcellset(grid, "inclusions")
-∂Ωᴾ_left   = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "left"))
-∂Ωᴾ_right  = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "right"))
-∂Ωᴾ_top    = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "top"))
-∂Ωᴾ_bottom = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "bottom"));
+∂Ωᴾ_left   = filter(facetindex -> facetindex[1] in particles, getfacetset(grid, "left"))
+∂Ωᴾ_right  = filter(facetindex -> facetindex[1] in particles, getfacetset(grid, "right"))
+∂Ωᴾ_top    = filter(facetindex -> facetindex[1] in particles, getfacetset(grid, "top"))
+∂Ωᴾ_bottom = filter(facetindex -> facetindex[1] in particles, getfacetset(grid, "bottom"));
 
 # We set up a `ConstraintHandler` with fixed values on the four sides.
 
@@ -166,7 +166,7 @@ end;
 
 # Next, we define a function that performs the assembly for a given set of cells.
 
-function assemble_set!(assembler, set::Set{Int}, dh, cv)
+function assemble_set!(assembler, set, dh, cv)
     nbf = getnbasefunctions(cv)
     Ke = zeros(nbf, nbf)
     for cc in CellIterator(dh, set)

@@ -1,13 +1,20 @@
 module FerriteInterfaceElements
 
-using Ferrite
-import Ferrite: AbstractCell, AbstractRefShape,
-    getnbasefunctions, getngeobasefunctions, getorder, n_components,
-    vertexdof_indices, facedof_indices, facedof_interior_indices, celldof_interior_indices,
-    vertices, faces, edges,
-    adjust_dofs_during_distribution, default_interpolation, default_geometric_interpolation,
+import Ferrite
+import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
+    RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron,
+    Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral, Tetrahedron, Hexahedron,
+    ScalarInterpolation, VectorizedInterpolation, Lagrange,
+    CellValues, QuadratureRule, CellCache, Grid, ExclusiveTopology, FacetIndex, Vec,
+    getnbasefunctions, getngeobasefunctions, getorder, n_components, getrefshape,
+    vertexdof_indices, edgedof_interior_indices, facedof_interior_indices, volumedof_interior_indices,
+    vertices, facets, edges,
+    adjust_dofs_during_distribution, default_geometric_interpolation, geometric_interpolation,
     checkbounds, checkquadpoint, function_value_init, function_gradient_init,
-    shape_value_type, shape_gradient_type
+    shape_value_type, shape_gradient_type,
+    reinit!, getnquadpoints, getdetJdV, shape_value, shape_gradient, function_value, function_gradient,
+    getcellset, getcells, getneighborhood
+import OrderedCollections: OrderedSet
 
 include("cells.jl")
 include("interpolations.jl")

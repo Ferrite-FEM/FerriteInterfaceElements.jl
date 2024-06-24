@@ -21,8 +21,8 @@ function prepare_interface_test_grid_2D(order::Integer)
                 ]
     end
     grid = Grid(cells, nodes)
-    addfaceset!(grid, "∂Ωₗ", x -> x[1] ≈ 0)
-    addfaceset!(grid, "∂Ωᵣ", x -> x[1] ≈ 2)
+    addfacetset!(grid, "∂Ωₗ", x -> x[1] ≈ 0)
+    addfacetset!(grid, "∂Ωᵣ", x -> x[1] ≈ 2)
     return grid
 end
 
@@ -57,8 +57,8 @@ function prepare_interface_test_grid_3D(order::Integer)
                 ]
     end
     grid = Grid(cells, nodes)
-    addfaceset!(grid, "∂Ωₗ", x -> x[1] ≈ 0)
-    addfaceset!(grid, "∂Ωᵣ", x -> x[1] ≈ 2)
+    addfacetset!(grid, "∂Ωₗ", x -> x[1] ≈ 0)
+    addfacetset!(grid, "∂Ωᵣ", x -> x[1] ≈ 2)
     return grid
 end
 

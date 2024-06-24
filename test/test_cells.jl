@@ -14,11 +14,11 @@
         cell = InterfaceCell(here, there)
 
         @test Ferrite.nvertices(cell) == Ferrite.nvertices(here) + Ferrite.nvertices(there)
-        @test Ferrite.nfaces(cell) == 2
+        @test Ferrite.nfacets(cell) == 2
         @test Ferrite.nnodes(cell) == Ferrite.nnodes(here) + Ferrite.nnodes(there)
         
         @test Ferrite.get_node_ids(cell) == ntuple(i -> i, Ferrite.nnodes(cell))
         @test Ferrite.vertices(cell) == (Ferrite.vertices(here)..., Ferrite.vertices(there)...)
-        @test Ferrite.faces(cell) == (Ferrite.vertices(here), Ferrite.vertices(there))
+        @test Ferrite.facets(cell) == (Ferrite.vertices(here), Ferrite.vertices(there))
     end
 end
