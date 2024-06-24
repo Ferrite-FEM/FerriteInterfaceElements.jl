@@ -29,7 +29,10 @@
 # in temperature from the particle to the matrix domain. For simplicity we set $k_{if} = 1$.
 #
 # Note that the two sides of an interface are referred to as "here" and "there".
-# The provided functions use a jump defined as "there - here".
+# The provided functions use a jump as defined from "here" to "there".
+# So, in this example the particles are to be considered the side "here".
+# (Here, this is not really relevant, since the sign of the jump has no influence
+# on the result in the weak form. In general, this could be relevant.)
 #
 # The resulting weak form is given given as follows: Find ``u \in \mathbb{U}`` such that
 # ```math

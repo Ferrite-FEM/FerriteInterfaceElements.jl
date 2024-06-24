@@ -174,7 +174,6 @@ end
 
 Return the value of shape function `i` evaluated in quadrature point `qp`
 for computing the value jump on an interface.
-The jump is defined as "here - there".
 """
 function Ferrite.shape_value_jump(cv::InterfaceCellValues, qp::Int, i::Int)
     side, baseindex = cv.sides_and_baseindices[i]
@@ -186,7 +185,6 @@ end
 
 Return the gradient of shape function `i` evaluated in quadrature point `qp`
 for computing the gradient jump on an interface.
-The jump is defined as "here - there".
 """
 function Ferrite.shape_gradient_jump(cv::InterfaceCellValues, qp::Int, i::Int)
     side, baseindex = cv.sides_and_baseindices[i]
@@ -265,7 +263,6 @@ end
     function_value_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
 
 Compute the jump of the function value in a quadrature point.
-The jump is defined as "here - there".
 """
 function Ferrite.function_value_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
     return function_value(cv, qp, u, false) - function_value(cv, qp, u, true)
@@ -275,7 +272,6 @@ end
     function_gradient_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
 
 Compute the jump of the function gradient in a quadrature point.
-The jump is defined as "here - there".
 """
 function Ferrite.function_gradient_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
     return function_gradient(cv, qp, u, false) - function_gradient(cv, qp, u, true)

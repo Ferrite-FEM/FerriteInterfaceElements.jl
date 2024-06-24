@@ -68,7 +68,7 @@ In FerriteInterfaceElements, their implementation is based on the idea to combin
 two embedded elements to represent the to sides of an interface. At the current state,
 it is only supported to use the same interpolation on both sides. To distinguish
 the two sides, they are referred to as *here* and *there*. The jump of a
-field is then defined as *field here - field there*.
+field is then defined as from *here* to *there*: *field there - field here*.
 
 Another key definition is the reference shape of interface elements. In
 FerriteInterfaceElements, the shape is chosen to be of the same dimension as the
