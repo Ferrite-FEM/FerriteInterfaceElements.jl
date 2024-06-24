@@ -101,7 +101,7 @@ end
 get_side_and_baseindex(cv::InterfaceCellValues, i::Integer) = cv.sides_and_baseindices[i]
 
 """
-    get_base_value(get_value::Function, cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
+    get_base_value(get_value::Function, cv::InterfaceCellValues, qp::Int, i::Int; here::Bool)
 
 Return a value from an `::InterfaceCellValues` by specifing:
 - `get_value`: function specifing which kind of value, e.g. `shape_value`
@@ -109,7 +109,7 @@ Return a value from an `::InterfaceCellValues` by specifing:
 - `i`: index of the base function
 - `here`: side of the interface, where `true` means "here" and `false` means "there".
 """
-function get_base_value(get_value::Function, cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
+function get_base_value(get_value::Function, cv::InterfaceCellValues, qp::Int, i::Int; here::Bool)
     side, baseindex = cv.sides_and_baseindices[i]
     if side == :here && here
         return get_value(cv.here, qp, baseindex)
@@ -120,13 +120,13 @@ function get_base_value(get_value::Function, cv::InterfaceCellValues, qp::Int, i
 end
 
 """
-    shape_value(cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
+    shape_value(cv::InterfaceCellValues, qp::Int, i::Int; here::Bool)
 
 Return the value of shape function `i` evaluated in quadrature point `qp`
 on side `here`, where `true` means "here" and `false` means "there".
 """
-function Ferrite.shape_value(cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
-    val = get_base_value(shape_value, cv, qp, i, here)
+function Ferrite.shape_value(cv::InterfaceCellValues, qp::Int, i::Int; here::Bool)
+    val = get_base_value(shape_value, cv, qp, i; here=here)
     if isnothing(val)
         return zero(shape_value_type(cv))
     end
@@ -134,13 +134,13 @@ function Ferrite.shape_value(cv::InterfaceCellValues, qp::Int, i::Int, here::Boo
 end
 
 """
-    shape_gradient(cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
+    shape_gradient(cv::InterfaceCellValues, qp::Int, i::Int; here::Bool)
 
 Return the gradient of shape function `i` evaluated in quadrature point `qp`
 on side `here`, where `true` means "here" and `false` means "there".
 """
-function Ferrite.shape_gradient(cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
-    grad = get_base_value(shape_gradient, cv, qp, i, here)
+function Ferrite.shape_gradient(cv::InterfaceCellValues, qp::Int, i::Int; here::Bool)
+    grad = get_base_value(shape_gradient, cv, qp, i; here=here)
     if isnothing(grad)
         return zero(shape_gradient_type(cv))
     end
@@ -177,7 +177,7 @@ for computing the value jump on an interface.
 """
 function Ferrite.shape_value_jump(cv::InterfaceCellValues, qp::Int, i::Int)
     side, baseindex = cv.sides_and_baseindices[i]
-    return side == :here ? -shape_value(cv.here, qp, baseindex) : shape_value(cv.there, qp, baseindex)
+    return side == :here ? shape_value(cv.here, qp, baseindex) : -shape_value(cv.there, qp, baseindex)
 end
 
 """
@@ -188,43 +188,43 @@ for computing the gradient jump on an interface.
 """
 function Ferrite.shape_gradient_jump(cv::InterfaceCellValues, qp::Int, i::Int)
     side, baseindex = cv.sides_and_baseindices[i]
-    return side == :here ? -shape_gradient(cv.here, qp, baseindex) : shape_gradient(cv.there, qp, baseindex)
+    return side == :here ? shape_gradient(cv.here, qp, baseindex) : -shape_gradient(cv.there, qp, baseindex)
 end
 
 """
-    function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool)
+    function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector; here::Bool)
 
 Compute the value of the function in a quadrature point on side `here`,
 where `true` means "here" and `false` means "there".
 `u` is a vector with values for the degrees of freedom.
 """
-function Ferrite.function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool, dof_range = eachindex(u))
+function Ferrite.function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, dof_range=eachindex(u); here::Bool)
     nbf = getnbasefunctions(cv)
     length(dof_range) == nbf || throw_incompatible_dof_length(length(dof_range), nbf)
     @boundscheck checkbounds(u, dof_range)
     @boundscheck checkquadpoint(cv, qp)
     val = function_value_init(cv, u)
     @inbounds for (i, j) in pairs(dof_range)
-        val += shape_value(cv, qp, i, here) * u[j]
+        val += shape_value(cv, qp, i; here=here) * u[j]
     end
     return val
 end
 
 """
-    function_gradient(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool)
+    function_gradient(cv::InterfaceCellValues, qp::Int, u::AbstractVector; here::Bool)
 
 Compute the gradient of the function in a quadrature point on side `here`,
 where `true` means "here" and `false` means "there".
 `u` is a vector with values for the degrees of freedom.
 """
-function Ferrite.function_gradient(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool, dof_range = eachindex(u))
+function Ferrite.function_gradient(cv::InterfaceCellValues, qp::Int, u::AbstractVector, dof_range=eachindex(u); here::Bool)
     nbf = getnbasefunctions(cv)
     length(dof_range) == nbf || throw_incompatible_dof_length(length(dof_range), nbf)
     @boundscheck checkbounds(u, dof_range)
     @boundscheck checkquadpoint(cv, qp)
     grad = function_gradient_init(cv, u)
     @inbounds for (i, j) in pairs(dof_range)
-        grad += shape_gradient(cv, qp, i, here) * u[j]
+        grad += shape_gradient(cv, qp, i; here=here) * u[j]
     end
     return grad
 end
@@ -235,7 +235,7 @@ end
 Compute the average value of the function in a quadrature point.
 """
 function Ferrite.function_value_average(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
-    return (function_value(cv, qp, u, true) + function_value(cv, qp, u, false))/2
+    return (function_value(cv, qp, u; here=true) + function_value(cv, qp, u; here=false))/2
 end
 
 """
@@ -244,7 +244,7 @@ end
 Compute the average gradient of the function in a quadrature point.
 """
 function Ferrite.function_gradient_average(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
-    return (function_gradient(cv, qp, u, true) + function_gradient(cv, qp, u, false)) / 2
+    return (function_gradient(cv, qp, u; here=true) + function_gradient(cv, qp, u; here=false)) / 2
 end
 
 """
@@ -265,7 +265,7 @@ end
 Compute the jump of the function value in a quadrature point.
 """
 function Ferrite.function_value_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
-    return function_value(cv, qp, u, false) - function_value(cv, qp, u, true)
+    return function_value(cv, qp, u; here=true) - function_value(cv, qp, u; here=false)
 end
 
 """
@@ -274,7 +274,7 @@ end
 Compute the jump of the function gradient in a quadrature point.
 """
 function Ferrite.function_gradient_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
-    return function_gradient(cv, qp, u, false) - function_gradient(cv, qp, u, true)
+    return function_gradient(cv, qp, u; here=true) - function_gradient(cv, qp, u; here=false)
 end
 
 function Base.show(io::IO, d::MIME"text/plain", cv::InterfaceCellValues)
