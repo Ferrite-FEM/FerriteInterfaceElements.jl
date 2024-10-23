@@ -48,7 +48,7 @@ end
     add!(ch, Dirichlet(:c, getfacetset(grid, "∂Ωᵣ"), (x,t) -> 0.0))
     close!(ch)
     
-    K = create_sparsity_pattern(dh, ch)
+    K = allocate_matrix(dh, ch)
     f = zeros(ndofs(dh))
     assembler = start_assemble(K,f)
     for (i, key) in enumerate((:left, :interface, :right))
