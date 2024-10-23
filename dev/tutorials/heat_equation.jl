@@ -22,10 +22,10 @@ add!(SubDofHandler(dh, set_interface), :u, ip_interface)
 close!(dh);
 
 particles = getcellset(grid, "inclusions")
-∂Ωᴾ_left   = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "left"))
-∂Ωᴾ_right  = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "right"))
-∂Ωᴾ_top    = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "top"))
-∂Ωᴾ_bottom = filter(faceindex -> faceindex[1] in particles, getfaceset(grid, "bottom"));
+∂Ωᴾ_left   = filter(facetindex -> facetindex[1] in particles, getfacetset(grid, "left"))
+∂Ωᴾ_right  = filter(facetindex -> facetindex[1] in particles, getfacetset(grid, "right"))
+∂Ωᴾ_top    = filter(facetindex -> facetindex[1] in particles, getfacetset(grid, "top"))
+∂Ωᴾ_bottom = filter(facetindex -> facetindex[1] in particles, getfacetset(grid, "bottom"));
 
 ch = ConstraintHandler(dh)
 add!(ch, Dirichlet(:u, ∂Ωᴾ_left,   Returns(1.0)))
@@ -64,7 +64,7 @@ function assemble_element!(Ke::Matrix, cv::InterfaceCellValues)
     return Ke
 end;
 
-function assemble_set!(assembler, set::Set{Int}, dh, cv)
+function assemble_set!(assembler, set, dh, cv)
     nbf = getnbasefunctions(cv)
     Ke = zeros(nbf, nbf)
     for cc in CellIterator(dh, set)
