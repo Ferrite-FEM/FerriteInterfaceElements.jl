@@ -16,7 +16,7 @@
     @test getnbasefunctions(ip) == 18
 
     @test Ferrite.vertexdof_indices(ip) == ((1,),(2,),(3,),(4,),(5,),(6,),(7,),(8,))
-    @test Ferrite.facedof_interior_indices(ip) == ((17,), (18,))
+    @test Ferrite.facetdof_interior_indices(ip) == ((17,), (18,))
     @test Ferrite.edgedof_interior_indices(ip) == ((9,),(10,),(11,),(12,),(13,),(14,),(15,),(16,))
 
     @test get_side_and_baseindex(ip, 5) == (:there, 1)
@@ -24,6 +24,6 @@
 
     testcelltype = InterfaceCell{RefQuadrilateral, Line, 4}
     expectedtype = InterfaceCellInterpolation{RefQuadrilateral, 1, Lagrange{RefLine,1,Nothing}}
-    @test Ferrite.default_interpolation(testcelltype) isa expectedtype
-    @test Ferrite.default_geometric_interpolation(Ferrite.default_interpolation(testcelltype)) isa VectorizedInterpolation{2, RefQuadrilateral, <:Any, expectedtype}
+    @test Ferrite.default_geometric_interpolation(testcelltype) isa expectedtype
+    @test Ferrite.default_geometric_interpolation(Ferrite.default_geometric_interpolation(testcelltype)) isa VectorizedInterpolation{2, RefQuadrilateral, <:Any, expectedtype}
 end
