@@ -76,7 +76,7 @@ function assemble_set!(assembler, set, dh, cv)
 end;
 
 function prepare_system(dh, cv_bulk, cv_interface, set_bulk, set_interface)
-    K = create_sparsity_pattern(dh)
+    K = allocate_matrix(dh)
     assembler = start_assemble(K)
     assemble_set!(assembler, set_bulk,      dh, cv_bulk)
     assemble_set!(assembler, set_interface, dh, cv_interface)
@@ -107,7 +107,7 @@ function get_nodal_temperatures(u::AbstractVector, dh::DofHandler)
     bulkcells = union( getcellset(grid, "inclusions"), getcellset(grid, "matrix") )
     uₙ = zeros(length(grid.nodes))
     for cc in CellIterator(dh, bulkcells)
-        cell = getcells(grid, cc.cellid.x)
+        cell = getcells(grid, cc.cellid)
         dofs = celldofs(cc)
         nodes = [cell.nodes...]
         uₙ[nodes] .= u[dofs]
