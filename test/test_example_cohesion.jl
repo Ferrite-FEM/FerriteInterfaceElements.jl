@@ -56,7 +56,7 @@ end
     end
     close!(ch)
     
-    K = create_sparsity_pattern(dh, ch)
+    K = allocate_matrix(dh, ch)
     f = zeros(ndofs(dh))
     assembler = start_assemble(K,f)
     for (i, key) in enumerate((:left, :interface, :right))
@@ -75,20 +75,20 @@ end
     testinput = dim == 2 ? ((:left,4,2,0,1), (:interface,1,2,1,1), (:right,4,2,1,2)) : ((:left,5,3,0,1), (:interface,1,2,1,1), (:right,5,3,1,2))
     for (i, (key, leftfacet, rightfacet, leftx, rightx)) in enumerate(testinput)
         dofs = celldofs(dh, i)
-        facetindices = Ferrite.facetdof_indices(ip[key])
-        leftdofs  = dofs[[facetindices[leftfacet]...]]
-        rightdofs = dofs[[facetindices[rightfacet]...]]
-        
+        facetindices = Ferrite.facetdof_indices(ip[key].ip)
+        leftindices  = facetindices[leftfacet]
+        rightindices = facetindices[rightfacet]
+        get_side_dofs(indices, comp) = [dofs[comp + dim*(i-1)] for i in indices]
         test_coordinate(given, expected) = abs(given - expected) ≤ 1e-5
             # x coordinates
-        @test all( test_coordinate.(u[leftdofs][1:dim:end], [leftx]) )
-        @test all( test_coordinate.(u[rightdofs][1:dim:end], [leftx]) )
+        @test all( test_coordinate.(u[get_side_dofs(leftindices, 1)], [leftx]) )
+        @test all( test_coordinate.(u[get_side_dofs(rightindices, 1)], [rightx]) )
             # y coordinates
-        @test all( test_coordinate.(u[leftdofs][2:dim:end], [1]) )
-        @test all( test_coordinate.(u[rightdofs][2:dim:end], [1]) )
+        @test all( test_coordinate.(u[get_side_dofs(leftindices, 2)], [1]) )
+        @test all( test_coordinate.(u[get_side_dofs(rightindices, 2)], [1]) )
         if dim == 3 # z coordinates
-            @test all( test_coordinate.(u[leftdofs][3:dim:end], [0]) )
-            @test all( test_coordinate.(u[rightdofs][3:dim:end], [0]) )
+            @test all( test_coordinate.(u[get_side_dofs(leftindices, 3)], [0]) )
+            @test all( test_coordinate.(u[get_side_dofs(rightindices, 3)], [0]) )
         end
     end
 end

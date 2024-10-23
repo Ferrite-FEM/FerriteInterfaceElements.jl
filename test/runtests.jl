@@ -13,3 +13,5 @@ using Test
 
     include("test_examples.jl")
 end
+
+println("Tests finished.")
