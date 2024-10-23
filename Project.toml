@@ -1,7 +1,7 @@
 name = "FerriteInterfaceElements"
 uuid = "76cf2c14-24ca-44b2-b86c-6046d3cfcf82"
 authors = ["Kim Louisa Auth <kim.auth@chalmers.se>", "Elias Börjesson <elias.borjesson@chalmers.se>", "David Rollin <d.rollin@tu-braunschweig.de>"]
-version = "1.0.0-DEV"
+version = "1.0.0"
 
 [deps]
 Ferrite = "c061ca5d-56c9-439f-9c0e-210fe06d3992"
