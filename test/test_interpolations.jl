@@ -1,7 +1,7 @@
 @testset "InterfaceCellInterpolation" begin
     for (baseshape, shape) in ( (RefLine, RefQuadrilateral), (RefTriangle, RefPrism), (RefQuadrilateral, RefHexahedron) )
         for order in (1,2)
-            IP   = Lagrange{baseshape, order, Nothing}
+            IP   = Lagrange{baseshape, order}
             base = Lagrange{baseshape, order}()
             @test InterfaceCellInterpolation(base) isa InterfaceCellInterpolation{shape, order, IP}
             ip = InterfaceCellInterpolation(base)
@@ -23,7 +23,7 @@
     @test_throws ArgumentError get_side_and_baseindex(ip, 19)
 
     testcelltype = InterfaceCell{RefQuadrilateral, Line, 4}
-    expectedtype = InterfaceCellInterpolation{RefQuadrilateral, 1, Lagrange{RefLine,1,Nothing}}
+    expectedtype = InterfaceCellInterpolation{RefQuadrilateral, 1, Lagrange{RefLine,1}}
     @test Ferrite.default_geometric_interpolation(testcelltype) isa expectedtype
     @test Ferrite.default_geometric_interpolation(Ferrite.default_geometric_interpolation(testcelltype)) isa VectorizedInterpolation{2, RefQuadrilateral, <:Any, expectedtype}
 end
