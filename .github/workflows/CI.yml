@@ -42,6 +42,8 @@ jobs:
       - uses: codecov/codecov-action@v5
         with:
           files: lcov.info
+          plugins: noop
+          disable_search: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   docs:
