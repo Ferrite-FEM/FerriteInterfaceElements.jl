@@ -36,4 +36,13 @@
         @test all(abs.(function_gradient_jump(cv, qp, u)) .≤ 1e-14)
         @test getdetJdV_average(cv, qp) == (getdetJdV(cv.here, qp) + getdetJdV(cv.there, qp)) / 2
     end
+
+    cv = InterfaceCellValues(qr, ip; include_R=true)
+    x = repeat([Vec{3}((0.0,0.0,0.0)), Vec{3}((1.0,0.0,0.0)), Vec{3}((0.0,1.0,0.0))], 2)
+    reinit!(cv, x)
+    for qp in 1:getnquadpoints(cv)
+        @test midplane_rotation(cv, qp) ≈ [ 0.0  sqrt(2)/2 0.0;
+                                           -1.0 -sqrt(2)/2 0.0;
+                                            0.0  0.0       1.0]
+    end
 end
