@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Heat equation · FerriteInterfaceElements.jl</title><meta name="title" content="Heat equation · FerriteInterfaceElements.jl"/><meta property="og:title" content="Heat equation · FerriteInterfaceElements.jl"/><meta property="twitter:title" content="Heat equation · FerriteInterfaceElements.jl"/><meta name="description" content="Documentation for FerriteInterfaceElements.jl."/><meta property="og:description" content="Documentation for FerriteInterfaceElements.jl."/><meta property="twitter:description" content="Documentation for FerriteInterfaceElements.jl."/><meta property="og:url" content="https://Ferrite-FEM.github.io/FerriteInterfaceElements.jl/tutorials/heat_equation/"/><meta property="twitter:url" content="https://Ferrite-FEM.github.io/FerriteInterfaceElements.jl/tutorials/heat_equation/"/><link rel="canonical" href="https://Ferrite-FEM.github.io/FerriteInterfaceElements.jl/tutorials/heat_equation/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">FerriteInterfaceElements.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../">Tutorials overview</a></li><li class="is-active"><a class="tocitem" href>Heat equation</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Commented-Program"><span>Commented Program</span></a></li><li><a class="tocitem" href="#heat_equation-plain-program"><span>Plain program</span></a></li></ul></li></ul></li><li><span class="tocitem">Reference</span><ul><li><a class="tocitem" href="../../reference/">Reference overview</a></li><li><a class="tocitem" href="../../reference/cells/">Cells and grid</a></li><li><a class="tocitem" href="../../reference/interpolations/">Interpolation</a></li><li><a class="tocitem" href="../../reference/cellvalues/">Cell Values</a></li></ul></li><li><a class="tocitem" href="../../devdocs/">Developer documentation</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Heat equation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Heat equation</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/Ferrite-FEM/FerriteInterfaceElements.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/Ferrite-FEM/FerriteInterfaceElements.jl/blob/main/docs/src/literate-tutorials/heat_equation.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="tutorial-heat-equation"><a class="docs-heading-anchor" href="#tutorial-heat-equation">Heat equation</a><a id="tutorial-heat-equation-1"></a><a class="docs-heading-anchor-permalink" href="#tutorial-heat-equation" title="Permalink"></a></h1><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>In this example, we solve the stationary heat equation in a domain with particles (<span>$\Omega^\text{P}$</span>) embedded in matrix (<span>$\Omega^\text{M}$</span>) with a possible temperature jump at the interface (<span>$\Gamma^{^\text{P/M}}$</span>). For the bulk domains, the following balance law is applied:</p><p class="math-container">\[ -\nabla \cdot (k \nabla u) = f  \quad \boldsymbol{x} \in \Omega^\text{P} \cup \Omega^\text{M},\]</p><p>where <span>$u$</span> is the unknown temperature field, <span>$k$</span> the heat conductivity, <span>$f$</span> the heat source and <span>$\Omega$</span> the domain. For simplicity we set <span>$k=1$</span> and <span>$f = 0$</span>.</p><p>For the interface, we formulate a balance law for the normal heat fluxes <span>$q_n^\text{P}$</span> and <span>$q_n^\text{M}$</span>:</p><p class="math-container">\[ q_n^\text{P} + q_n^\text{M} = 0  \quad \boldsymbol{x} \in \Gamma^\text{P/M},\]</p><p>We define the flux across the interface as:</p><p class="math-container">\[ q_n := q_n^\text{P} = - k_{if} [\![ u ]\!]\]</p><p>where <span>$k_{if}$</span> is the interface conductivity and <span>$[\![ u ]\!]$</span> is the jump <span>$u^\text{M} - u^\text{P}$</span> in temperature from the particle to the matrix domain. For simplicity we set <span>$k_{if} = 1$</span>.</p><p>Note that the two sides of an interface are referred to as &quot;here&quot; and &quot;there&quot;. The provided functions use a jump as defined from &quot;here&quot; to &quot;there&quot;. So, in this example the particles are to be considered the side &quot;here&quot;. (Here, this is not really relevant, since the sign of the jump has no influence on the result in the weak form. In general, this could be relevant.)</p><p>The resulting weak form is given given as follows: Find <span>$u \in \mathbb{U}$</span> such that</p><p class="math-container">\[ \int_{\Omega} \nabla \delta u \cdot \nabla u \mathrm{d}\Omega
+ \int_{\Gamma^{\text{P}/\text{M}}} [\![ \delta u ]\!] [\![ u ]\!] \mathrm{d}\Gamma
+ = 0 \quad \forall \delta u \in \mathbb{T},\]</p><p>where <span>$\delta u$</span> is a test function, and where <span>$\mathbb{U}$</span> and <span>$\mathbb{T}$</span> are suitable trial and test function spaces, respectively.</p><h2 id="Commented-Program"><a class="docs-heading-anchor" href="#Commented-Program">Commented Program</a><a id="Commented-Program-1"></a><a class="docs-heading-anchor-permalink" href="#Commented-Program" title="Permalink"></a></h2><p>Now we solve the problem in Ferrite together with FerriteInterfaceElements. What follows is a program spliced with comments. The full program, without comments, can be found in the next <a href="#heat_equation-plain-program">section</a>.</p><p>First we load all the packages we need for the computation.</p><pre><code class="language-julia hljs">using Ferrite, FerriteInterfaceElements, SparseArrays, FerriteGmsh</code></pre><p>Then, we load the mesh file <a href="../periodic-rve.msh"><code>periodic-rve.msh</code></a> (<a href="../periodic-rve-coarse.msh"><code>periodic-rve-coarse.msh</code></a> for a coarser mesh). The mesh is generated with <a href="https://gmsh.info/"><code>gmsh</code></a>, and we read it in as a <code>Ferrite</code> grid using the <a href="https://github.com/Ferrite-FEM/FerriteGmsh.jl"><code>FerriteGmsh</code></a> package:</p><pre><code class="language-julia hljs">grid = togrid(&quot;periodic-rve.msh&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Grid{2, Triangle, Float64} with 11904 Triangle cells and 6097 nodes</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Grid{2, Triangle, Float64} with 186 Triangle cells and 112 nodes</code></pre><p>So far, this mesh only contains standard cells for the bulk phases. Thus, we need to insert <code>InterfaceCell</code>s at the faces between cells in different phases. To do so, we can use the function <code>insert_interfaces</code>. This function creates a new grid with interfaces between subdomains which are defined by names of cellsets which are passed as arguments. The resulting grid includes new cellsets: <code>&quot;interfaces&quot;</code> for all interfaces and <code>domain1-domain2-interface&quot;</code> for interfaces between each pair of subdomains. Note that original cell and face sets are preserved, however, node sets are not.</p><pre><code class="language-julia hljs">grid = insert_interfaces(grid, [&quot;inclusions&quot;, &quot;matrix&quot;]);</code></pre><h3 id="Trial-and-test-functions"><a class="docs-heading-anchor" href="#Trial-and-test-functions">Trial and test functions</a><a id="Trial-and-test-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Trial-and-test-functions" title="Permalink"></a></h3><p>First, we define an interpolation and a quadrature rule for both bulk and interface cells.</p><pre><code class="language-julia hljs">ip_bulk = Lagrange{RefTriangle, 1}()
+ip_interface = InterfaceCellInterpolation(Lagrange{RefLine, 1}())
+
+qr_bulk = QuadratureRule{RefTriangle}(2)
+qr_interface = QuadratureRule{RefLine}(2);</code></pre><p>With these definitions, we can create cell values.</p><pre><code class="language-julia hljs">cv_bulk = CellValues(qr_bulk, ip_bulk)
+cv_interface = InterfaceCellValues(qr_interface, ip_interface);</code></pre><h3 id="Degrees-of-freedom"><a class="docs-heading-anchor" href="#Degrees-of-freedom">Degrees of freedom</a><a id="Degrees-of-freedom-1"></a><a class="docs-heading-anchor-permalink" href="#Degrees-of-freedom" title="Permalink"></a></h3><p>Next we create the <code>DofHandler</code>. Here, one needs distinguish the different types of cells. This can be done by using <code>SubDofHandlers</code>.</p><pre><code class="language-julia hljs">dh = DofHandler(grid)
+set_bulk = union(getcellset(grid, &quot;inclusions&quot;), getcellset(grid, &quot;matrix&quot;))
+set_interface = getcellset(grid, &quot;interfaces&quot;)
+add!(SubDofHandler(dh, set_bulk),      :u, ip_bulk)
+add!(SubDofHandler(dh, set_interface), :u, ip_interface)
+close!(dh);</code></pre><h3 id="Boundary-conditions"><a class="docs-heading-anchor" href="#Boundary-conditions">Boundary conditions</a><a id="Boundary-conditions-1"></a><a class="docs-heading-anchor-permalink" href="#Boundary-conditions" title="Permalink"></a></h3><p>To construct a simple example and still be able to observe jumps at the interfaces, we fix the temperatur to different values on the particle portion of the boundary.</p><pre><code class="language-julia hljs">particles = getcellset(grid, &quot;inclusions&quot;)
+∂Ωᴾ_left   = filter(facetindex -&gt; facetindex[1] in particles, getfacetset(grid, &quot;left&quot;))
+∂Ωᴾ_right  = filter(facetindex -&gt; facetindex[1] in particles, getfacetset(grid, &quot;right&quot;))
+∂Ωᴾ_top    = filter(facetindex -&gt; facetindex[1] in particles, getfacetset(grid, &quot;top&quot;))
+∂Ωᴾ_bottom = filter(facetindex -&gt; facetindex[1] in particles, getfacetset(grid, &quot;bottom&quot;));</code></pre><p>We set up a <code>ConstraintHandler</code> with fixed values on the four sides.</p><pre><code class="language-julia hljs">ch = ConstraintHandler(dh)
+add!(ch, Dirichlet(:u, ∂Ωᴾ_left,   Returns(1.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_right,  Returns(1.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_top,    Returns(0.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_bottom, Returns(0.0)))
+close!(ch);</code></pre><h3 id="Assembling-the-linear-system"><a class="docs-heading-anchor" href="#Assembling-the-linear-system">Assembling the linear system</a><a id="Assembling-the-linear-system-1"></a><a class="docs-heading-anchor-permalink" href="#Assembling-the-linear-system" title="Permalink"></a></h3><p>Now we can prepare the assembly of the global system of equations. We start by defining two element assembly functions for the two phases. To distinguish the phases, we use dispatch on the cell value types.</p><pre><code class="language-julia hljs">function assemble_element!(Ke::Matrix, cv::CellValues)
+    fill!(Ke, 0)
+    for qp in 1:getnquadpoints(cv)
+        dΩ = getdetJdV(cv, qp)
+        for i in 1:getnbasefunctions(cv)
+            ∇δu = shape_gradient(cv, qp, i)
+            for j in 1:getnbasefunctions(cv)
+                ∇u = shape_gradient(cv, qp, j)
+                Ke[i, j] += (∇δu ⋅ ∇u) * dΩ
+            end
+        end
+    end
+    return Ke
+end
+
+function assemble_element!(Ke::Matrix, cv::InterfaceCellValues)
+    fill!(Ke, 0)
+    for qp in 1:getnquadpoints(cv)
+        dΩ = getdetJdV_average(cv, qp)
+        for i in 1:getnbasefunctions(cv)
+            jump_δu = shape_value_jump(cv, qp, i)
+            for j in 1:getnbasefunctions(cv)
+                jump_u = shape_value_jump(cv, qp, j)
+                Ke[i, j] += (jump_δu * jump_u) * dΩ
+            end
+        end
+    end
+    return Ke
+end;</code></pre><p>Next, we define a function that performs the assembly for a given set of cells.</p><pre><code class="language-julia hljs">function assemble_set!(assembler, set, dh, cv)
+    nbf = getnbasefunctions(cv)
+    Ke = zeros(nbf, nbf)
+    for cc in CellIterator(dh, set)
+        reinit!(cv, cc)
+        assemble_element!(Ke, cv)
+        assemble!(assembler, celldofs(cc), Ke)
+    end
+    return assembler
+end;</code></pre><p>This can then be used in a function for preparing the system of equations.</p><pre><code class="language-julia hljs">function prepare_system(dh, cv_bulk, cv_interface, set_bulk, set_interface)
+    K = allocate_matrix(dh)
+    assembler = start_assemble(K)
+    assemble_set!(assembler, set_bulk,      dh, cv_bulk)
+    assemble_set!(assembler, set_interface, dh, cv_interface)
+    return K, zeros(ndofs(dh))
+end;</code></pre><h3 id="Solution-and-visualization"><a class="docs-heading-anchor" href="#Solution-and-visualization">Solution and visualization</a><a id="Solution-and-visualization-1"></a><a class="docs-heading-anchor-permalink" href="#Solution-and-visualization" title="Permalink"></a></h3><p>Finally, the system of equations can be assembled and solved.</p><pre><code class="language-julia hljs">K, f = prepare_system(dh, cv_bulk, cv_interface, set_bulk, set_interface)
+apply!(K, f, ch)
+u = K \ f;</code></pre><p>To visualize the computed result, we will write a simple function for plotting the temperature using Makie. The first important step is translating the Ferrite grid to a representation Makie can use.</p><pre><code class="language-julia hljs">import Makie, GeometryBasics
+
+function convert_nodes(grid::Grid{dim}) where {dim}
+    return collect( GeometryBasics.Point{dim,Float64}(n.x...) for n in grid.nodes )
+end
+
+function convert_cells(::Grid)
+    bulkcells = filter(c -&gt; !(c isa InterfaceCell), grid.cells) # `InterfaceCell`s are not plotted
+    return collect( GeometryBasics.TriangleFace{Int}(cell.nodes...) for cell in bulkcells )
+end
+
+function prepare_plotable_mesh(grid::Grid)
+    return GeometryBasics.Mesh(convert_nodes(grid), convert_cells(grid))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">prepare_plotable_mesh (generic function with 1 method)</code></pre><p>The nex step is to get the nodal temperature values. However, the Ferrite function <code>evaluate_at_grid_nodes</code> does not (yet) work for interface elements. Thus, we need to rearrange the solution vector ourselves. Althought it is not the most efficient way, a simple solution is to iterate over the bulk cells and use the DOF mapping of each cell.</p><pre><code class="language-julia hljs">function get_nodal_temperatures(u::AbstractVector, dh::DofHandler)
+    grid = dh.grid
+    bulkcells = union( getcellset(grid, &quot;inclusions&quot;), getcellset(grid, &quot;matrix&quot;) )
+    uₙ = zeros(length(grid.nodes))
+    for cc in CellIterator(dh, bulkcells)
+        cell = getcells(grid, cc.cellid)
+        dofs = celldofs(cc)
+        nodes = [cell.nodes...]
+        uₙ[nodes] .= u[dofs]
+    end
+    return uₙ
+end;</code></pre><p>Finally, a function can be defined to create the desired plot.</p><pre><code class="language-julia hljs">function plot_temperature(u::Vector, dh::DofHandler)
+    mesh = prepare_plotable_mesh(dh.grid)
+    temperature = get_nodal_temperatures(u, dh)
+
+    fig = Makie.Figure()
+    ax = Makie.Axis(fig[1,1]; title=&quot;Solution&quot;, aspect=Makie.DataAspect())
+    p = Makie.mesh!(ax, mesh; color=temperature, colormap=:heat)
+    Makie.Colorbar(fig[1,2], p; label=&quot;u&quot;, labelrotation=0)
+    return fig
+end;</code></pre><p>Using this function we can create and save a visualization.</p><pre><code class="language-julia hljs">import CairoMakie
+fig = plot_temperature(u, dh)
+CairoMakie.save(&quot;heat_equation_result.png&quot;, fig);</code></pre><p><img src="../heat_equation_result.png" alt/></p><h2 id="heat_equation-plain-program"><a class="docs-heading-anchor" href="#heat_equation-plain-program">Plain program</a><a id="heat_equation-plain-program-1"></a><a class="docs-heading-anchor-permalink" href="#heat_equation-plain-program" title="Permalink"></a></h2><p>Here follows a version of the program without any comments. The file is also available here: <a href="../heat_equation.jl"><code>heat_equation.jl</code></a>.</p><pre><code class="language-julia hljs">using Ferrite, FerriteInterfaceElements, SparseArrays, FerriteGmsh
+
+# grid = togrid(&quot;periodic-rve-coarse.msh&quot;)
+grid = togrid(&quot;periodic-rve.msh&quot;)
+
+grid = insert_interfaces(grid, [&quot;inclusions&quot;, &quot;matrix&quot;]);
+
+ip_bulk = Lagrange{RefTriangle, 1}()
+ip_interface = InterfaceCellInterpolation(Lagrange{RefLine, 1}())
+
+qr_bulk = QuadratureRule{RefTriangle}(2)
+qr_interface = QuadratureRule{RefLine}(2);
+
+cv_bulk = CellValues(qr_bulk, ip_bulk)
+cv_interface = InterfaceCellValues(qr_interface, ip_interface);
+
+dh = DofHandler(grid)
+set_bulk = union(getcellset(grid, &quot;inclusions&quot;), getcellset(grid, &quot;matrix&quot;))
+set_interface = getcellset(grid, &quot;interfaces&quot;)
+add!(SubDofHandler(dh, set_bulk),      :u, ip_bulk)
+add!(SubDofHandler(dh, set_interface), :u, ip_interface)
+close!(dh);
+
+particles = getcellset(grid, &quot;inclusions&quot;)
+∂Ωᴾ_left   = filter(facetindex -&gt; facetindex[1] in particles, getfacetset(grid, &quot;left&quot;))
+∂Ωᴾ_right  = filter(facetindex -&gt; facetindex[1] in particles, getfacetset(grid, &quot;right&quot;))
+∂Ωᴾ_top    = filter(facetindex -&gt; facetindex[1] in particles, getfacetset(grid, &quot;top&quot;))
+∂Ωᴾ_bottom = filter(facetindex -&gt; facetindex[1] in particles, getfacetset(grid, &quot;bottom&quot;));
+
+ch = ConstraintHandler(dh)
+add!(ch, Dirichlet(:u, ∂Ωᴾ_left,   Returns(1.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_right,  Returns(1.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_top,    Returns(0.0)))
+add!(ch, Dirichlet(:u, ∂Ωᴾ_bottom, Returns(0.0)))
+close!(ch);
+
+function assemble_element!(Ke::Matrix, cv::CellValues)
+    fill!(Ke, 0)
+    for qp in 1:getnquadpoints(cv)
+        dΩ = getdetJdV(cv, qp)
+        for i in 1:getnbasefunctions(cv)
+            ∇δu = shape_gradient(cv, qp, i)
+            for j in 1:getnbasefunctions(cv)
+                ∇u = shape_gradient(cv, qp, j)
+                Ke[i, j] += (∇δu ⋅ ∇u) * dΩ
+            end
+        end
+    end
+    return Ke
+end
+
+function assemble_element!(Ke::Matrix, cv::InterfaceCellValues)
+    fill!(Ke, 0)
+    for qp in 1:getnquadpoints(cv)
+        dΩ = getdetJdV_average(cv, qp)
+        for i in 1:getnbasefunctions(cv)
+            jump_δu = shape_value_jump(cv, qp, i)
+            for j in 1:getnbasefunctions(cv)
+                jump_u = shape_value_jump(cv, qp, j)
+                Ke[i, j] += (jump_δu * jump_u) * dΩ
+            end
+        end
+    end
+    return Ke
+end;
+
+function assemble_set!(assembler, set, dh, cv)
+    nbf = getnbasefunctions(cv)
+    Ke = zeros(nbf, nbf)
+    for cc in CellIterator(dh, set)
+        reinit!(cv, cc)
+        assemble_element!(Ke, cv)
+        assemble!(assembler, celldofs(cc), Ke)
+    end
+    return assembler
+end;
+
+function prepare_system(dh, cv_bulk, cv_interface, set_bulk, set_interface)
+    K = allocate_matrix(dh)
+    assembler = start_assemble(K)
+    assemble_set!(assembler, set_bulk,      dh, cv_bulk)
+    assemble_set!(assembler, set_interface, dh, cv_interface)
+    return K, zeros(ndofs(dh))
+end;
+
+K, f = prepare_system(dh, cv_bulk, cv_interface, set_bulk, set_interface)
+apply!(K, f, ch)
+u = K \ f;
+
+import Makie, GeometryBasics
+
+function convert_nodes(grid::Grid{dim}) where {dim}
+    return collect( GeometryBasics.Point{dim,Float64}(n.x...) for n in grid.nodes )
+end
+
+function convert_cells(::Grid)
+    bulkcells = filter(c -&gt; !(c isa InterfaceCell), grid.cells) # `InterfaceCell`s are not plotted
+    return collect( GeometryBasics.TriangleFace{Int}(cell.nodes...) for cell in bulkcells )
+end
+
+function prepare_plotable_mesh(grid::Grid)
+    return GeometryBasics.Mesh(convert_nodes(grid), convert_cells(grid))
+end
+
+function get_nodal_temperatures(u::AbstractVector, dh::DofHandler)
+    grid = dh.grid
+    bulkcells = union( getcellset(grid, &quot;inclusions&quot;), getcellset(grid, &quot;matrix&quot;) )
+    uₙ = zeros(length(grid.nodes))
+    for cc in CellIterator(dh, bulkcells)
+        cell = getcells(grid, cc.cellid)
+        dofs = celldofs(cc)
+        nodes = [cell.nodes...]
+        uₙ[nodes] .= u[dofs]
+    end
+    return uₙ
+end;
+
+function plot_temperature(u::Vector, dh::DofHandler)
+    mesh = prepare_plotable_mesh(dh.grid)
+    temperature = get_nodal_temperatures(u, dh)
+
+    fig = Makie.Figure()
+    ax = Makie.Axis(fig[1,1]; title=&quot;Solution&quot;, aspect=Makie.DataAspect())
+    p = Makie.mesh!(ax, mesh; color=temperature, colormap=:heat)
+    Makie.Colorbar(fig[1,2], p; label=&quot;u&quot;, labelrotation=0)
+    return fig
+end;
+
+import CairoMakie
+fig = plot_temperature(u, dh)
+CairoMakie.save(&quot;heat_equation_result.png&quot;, fig);</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Tutorials overview</a><a class="docs-footer-nextpage" href="../../reference/">Reference overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Tuesday 17 December 2024 13:07">Tuesday 17 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
