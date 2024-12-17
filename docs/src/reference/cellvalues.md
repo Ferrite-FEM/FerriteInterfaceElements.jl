@@ -14,6 +14,7 @@ function_value_average
 function_gradient_average
 function_value_jump
 function_gradient_jump
+midplane_rotation
 getdetJdV_average
 get_side_and_baseindex
 ```

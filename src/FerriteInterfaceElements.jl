@@ -1,7 +1,6 @@
 module FerriteInterfaceElements
 
-import Ferrite
-import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
+import Ferrite: Ferrite, AbstractCell, AbstractRefShape, AbstractCellValues,
     RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron,
     Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral, Tetrahedron, Hexahedron,
     ScalarInterpolation, VectorizedInterpolation, Lagrange,
@@ -13,28 +12,28 @@ import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
     checkbounds, checkquadpoint, function_value_init, function_gradient_init,
     shape_value_type, shape_gradient_type,
     reinit!, getnquadpoints, getdetJdV, shape_value, shape_gradient, function_value, function_gradient,
-    getcellset, getcells, getneighborhood
+    getcellset, getcells, getneighborhood,
+    ×, norm
 import OrderedCollections: OrderedSet
+import StaticArraysCore: SMatrix, SVector
 
 include("cells.jl")
-include("interpolations.jl")
-include("cellvalues.jl")
-include("grid.jl")
+export InterfaceCell
 
-export
-    InterfaceCell,
-    InterfaceCellInterpolation,
-    InterfaceCellValues,
+include("interpolations.jl")
+export InterfaceCellInterpolation
+
+include("cellvalues.jl")
+export InterfaceCellValues,
     get_side_and_baseindex,
-    shape_value_average,
-    shape_gradient_average,
-    shape_value_jump,
-    shape_gradient_jump,
-    function_value_average,
-    function_gradient_average,
-    function_value_jump,
-    function_gradient_jump,
-    getdetJdV_average,
-    insert_interfaces
+    shape_value_average, shape_gradient_average,
+    shape_value_jump, shape_gradient_jump,
+    function_value_average, function_gradient_average,
+    function_value_jump, function_gradient_jump,
+    midplane_rotation,
+    getdetJdV_average
+
+include("grid.jl")
+export insert_interfaces
 
 end
