@@ -38,14 +38,16 @@
     end
 
     cv = InterfaceCellValues(qr, ip; include_R=true)
-    reinit!(cv, x)
-    R = Tensor{2,3}(midplane_rotation(cv, qp))
-    @test tdot(R) ≈ one(R) # Fails as dx/dξ₁ not perpendicular to dx/ξ₂
-    x = repeat([Vec{3}((0.0,0.0,0.0)), Vec{3}((1.0,0.0,0.0)), Vec{3}((0.0,1.0,0.0))], 2)
+    x  = repeat([Vec{3}((1.0,0.0,0.0)), Vec{3}((0.0,1.0,0.0)), Vec{3}((0.0,0.0,1.0))], 2)
+    n  = Vec{3}(( sqrt(1/3),  sqrt(1/3),   sqrt(1/3)))
+    t₁ = Vec{3}(( sqrt(1/2),  0.0,        -sqrt(1/2)))
+    t₂ = Vec{3}((-sqrt(1/6), 2*sqrt(1/6), -sqrt(1/6)))
     reinit!(cv, x)
     for qp in 1:getnquadpoints(cv)
-        @test midplane_rotation(cv, qp) ≈ [ 0.0  sqrt(2)/2 0.0;
-                                           -1.0 -sqrt(2)/2 0.0;
-                                            0.0  0.0       1.0]
+        R = Tensor{2,3}(midplane_rotation(cv, qp))
+        @test tdot(R) ≈ one(R) # Fails e.g. when dx/dξ₁ not perpendicular to dx/ξ₂
+        @test R⋅Vec{3}((1.0,0.0,0.0)) ≈ t₁
+        @test R⋅Vec{3}((0.0,1.0,0.0)) ≈ t₂
+        @test R⋅Vec{3}((0.0,0.0,1.0)) ≈ n
     end
 end

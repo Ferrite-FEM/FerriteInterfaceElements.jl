@@ -33,7 +33,7 @@ struct InterfaceCellValues{CV,TR} <: AbstractCellValues
         
         if include_R
             T = eltype(here.detJdV)
-            TR = Vector{SMatrix{sdim, sdim, T, sdim*sdim}}
+            TR = Vector{Tensor{2, sdim, T}}
             R = TR(undef, length(getnquadpoints(here)))
         else
             TR = Nothing
@@ -126,17 +126,24 @@ function Ferrite.reinit!(cv::InterfaceCellValues{CV,TR}, x::AbstractVector{Vec{s
             J_here  = Ferrite.getjacobian(mapping_here)
             J_there = Ferrite.getjacobian(mapping_there)
             J = (J_here + J_there) / 2
-            n = _mid_plane_normal(J)
-            cv.R[qp] = hcat((c / norm(c) for c in eachcol(hcat(J, n)))...)
+            cv.R[qp] = _get_R_from_J(J)
         end
     end
     return nothing
 end
+function _get_R_from_J(J::SMatrix{2,1,T}) where T 
+    v1 = J[:, 1]
+    v2 = SVector{2,T}((-v[2], v[1]))
+    return Tensor{2,2,T}(((v1/norm(v1))..., (v2/norm(v2))...))
+end
+function _get_R_from_J(J::SMatrix{3,2,T}) where T 
+    v1 = J[:, 1]
+    v3 = v1 × J[:, 2]
+    v2 = v3 × v1
+    return Tensor{2,3,T}(((v1/norm(v1))..., (v2/norm(v2))..., (v3/norm(v3))...))
+end
 
 get_side_and_baseindex(cv::InterfaceCellValues, i::Integer) = cv.sides_and_baseindices[i]
-
-_mid_plane_normal(J::SMatrix{2,1,T}) where T = SVector{2}((-J[2], J[1]))
-_mid_plane_normal(J::SMatrix{3,2,T}) where T = J[:,1] × J[:,2]
 
 """
     get_base_value(get_value::Function, cv::InterfaceCellValues, qp::Int, i::Int, here::Bool)
