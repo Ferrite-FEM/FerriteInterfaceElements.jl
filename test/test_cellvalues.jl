@@ -44,7 +44,7 @@
     t₂ = Vec{3}((-sqrt(1/6), 2*sqrt(1/6), -sqrt(1/6)))
     reinit!(cv, x)
     for qp in 1:getnquadpoints(cv)
-        R = Tensor{2,3}(midplane_rotation(cv, qp))
+        R = midplane_rotation(cv, qp)
         @test tdot(R) ≈ one(R) # Fails e.g. when dx/dξ₁ not perpendicular to dx/ξ₂
         @test R⋅Vec{3}((1.0,0.0,0.0)) ≈ t₁
         @test R⋅Vec{3}((0.0,1.0,0.0)) ≈ t₂
