@@ -34,7 +34,7 @@ struct InterfaceCellValues{CV,TR} <: AbstractCellValues
         if include_R
             T = eltype(here.detJdV)
             TR = Vector{Tensor{2, sdim, T}}
-            R = TR(undef, length(getnquadpoints(here)))
+            R = TR(undef, getnquadpoints(here))
         else
             TR = Nothing
             R = nothing
