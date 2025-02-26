@@ -24,23 +24,30 @@ struct InterfaceCellValues{CV,TR} <: AbstractCellValues
     sides_and_baseindices::Tuple
     R::TR # Union{AbstractVector,Nothing} Rotation matrix in quadrature points
 
-    function InterfaceCellValues(ip::IP, here::CV; use_same_cv::Bool, include_R::Bool) where {
+    function InterfaceCellValues(ip::IP, here::CV, use_same_cv::Bool, include_R::Val{false}) where {
             sdim, shape<:AbstractRefShape{sdim}, 
             IP<:Union{InterfaceCellInterpolation{shape}, VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation{shape}}},
             CV<:CellValues}
         sides_and_baseindices, base_indices_here, base_indices_there = _prepare_baseindices(ip)
         there = use_same_cv ? here : deepcopy(here)
         
-        if include_R
-            T = eltype(here.detJdV)
-            TR = Vector{Tensor{2, sdim, T}}
-            R = TR(undef, getnquadpoints(here))
-        else
-            TR = Nothing
-            R = nothing
-        end
+        TR = Nothing
+        R  = nothing
         return new{CV,TR}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
     end
+
+    function InterfaceCellValues(ip::IP, here::CV, use_same_cv::Bool, include_R::Val{true}) where {
+        sdim, shape<:AbstractRefShape{sdim}, 
+        IP<:Union{InterfaceCellInterpolation{shape}, VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation{shape}}},
+        CV<:CellValues}
+    sides_and_baseindices, base_indices_here, base_indices_there = _prepare_baseindices(ip)
+    there = use_same_cv ? here : deepcopy(here)
+    
+    T = eltype(here.detJdV)
+    TR = Vector{Tensor{2, sdim, T}}
+    R = TR(undef, getnquadpoints(here))
+    return new{CV,TR}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
+end
 end
 
 function _prepare_baseindices(ip::IP) where {IP<:InterfaceCellInterpolation}
@@ -58,21 +65,22 @@ function _prepare_baseindices(ip::IP) where {IP<:VectorizedInterpolation{<:Any,<
 end
 
 InterfaceCellValues(qr::QuadratureRule, args...; kwargs...) = InterfaceCellValues(Float64, qr, args...; kwargs...)
+InterfaceCellValues(ip, here, use_same_cv, include_R::Bool) = InterfaceCellValues(ip, here, use_same_cv, Val(include_R))
 
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
             ip::InterfaceCellInterpolation, 
             ip_geo::VectorizedInterpolation{sdim,<:Any,<:Any,<:InterfaceCellInterpolation} = default_geometric_interpolation(ip); 
-            use_same_cv=true, include_R=false, kwargs...) where {T, sdim}
+            use_same_cv=true, include_R=Val(false), kwargs...) where {T, sdim}
     cv = CellValues(T, qr, ip.base, VectorizedInterpolation{sdim}(ip_geo.ip.base); kwargs...)
-    return InterfaceCellValues(ip, cv; use_same_cv=use_same_cv, include_R=include_R)
+    return InterfaceCellValues(ip, cv, use_same_cv, include_R)
 end
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
             ip::VectorizedInterpolation{vdim,<:Any,<:Any,<:InterfaceCellInterpolation}, 
             ip_geo::VectorizedInterpolation{sdim,<:Any,<:Any,<:InterfaceCellInterpolation} = default_geometric_interpolation(ip); 
-            use_same_cv=true, include_R=false, kwargs...) where {T, vdim, sdim}
+            use_same_cv=true, include_R=Val(false), kwargs...) where {T, vdim, sdim}
     cv = CellValues(T, qr, VectorizedInterpolation{vdim}(ip.ip.base), 
                            VectorizedInterpolation{sdim}(ip_geo.ip.base); kwargs...)
-    return InterfaceCellValues(ip, cv; use_same_cv=use_same_cv, include_R=include_R)
+    return InterfaceCellValues(ip, cv, use_same_cv, include_R)
 end
 
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
