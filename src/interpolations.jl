@@ -54,7 +54,7 @@ function Ferrite.facedof_interior_indices(ip::InterfaceCellInterpolation{<:Abstr
     here  = map(dofs -> map(d -> d + offset, dofs), basedofs)
     offset += length(basedofs)
     there = map(dofs -> map(d -> d + offset, dofs), basedofs)
-    return (here, there)
+    return (here..., there...)
 end
 
 #########################################################
