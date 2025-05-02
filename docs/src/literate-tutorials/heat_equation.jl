@@ -37,7 +37,7 @@
 # The resulting weak form is given given as follows: Find ``u \in \mathbb{U}`` such that
 # ```math
 #  \int_{\Omega} \nabla \delta u \cdot \nabla u \mathrm{d}\Omega
-#  \int_{\Gamma^{\text{P}/\text{M}}} [\![ \delta u ]\!] [\![ u ]\!] \mathrm{d}\Gamma
+#  + \int_{\Gamma^{\text{P}/\text{M}}} [\![ \delta u ]\!] [\![ u ]\!] \mathrm{d}\Gamma
 #  = 0 \quad \forall \delta u \in \mathbb{T},
 # ```
 # where $\delta u$ is a test function, and where $\mathbb{U}$ and $\mathbb{T}$ are suitable
