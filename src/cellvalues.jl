@@ -13,28 +13,30 @@ The keyword argument `use_same_cv` can be set to `false` to disable this behavio
 - `base_indices_there::Vector{Int}`: base function indices on facet "there"
 - `sides_and_baseindices::Tuple`: side and base function for the base `CellValues` for each base function of the `InterfaceCellValues`
 """
-struct InterfaceCellValues{CV} <: AbstractCellValues
+struct InterfaceCellValues{CV,N} <: AbstractCellValues
     here::CV
     there::CV
     base_indices_here::Vector{Int}
     base_indices_there::Vector{Int}
-    sides_and_baseindices::Tuple
+    sides_and_baseindices::NTuple{N,Tuple{Symbol,Int}}
 
     function InterfaceCellValues(ip::IP, here::CV; use_same_cv) where {IP<:InterfaceCellInterpolation, CV<:CellValues}
-        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:getnbasefunctions(ip) )
+        N = getnbasefunctions(ip)
+        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
         base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
         base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
         there = use_same_cv ? here : deepcopy(here)
-        return new{CV}(here, there, base_indices_here, base_indices_there, sides_and_baseindices)
+        return new{CV,N}(here, there, base_indices_here, base_indices_there, sides_and_baseindices)
     end
 
     function InterfaceCellValues(ip::IP, here::CV; use_same_cv) where {IP<:VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, CV<:CellValues}
-        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:getnbasefunctions(ip) )
+        N = getnbasefunctions(ip)
+        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
         ip = ip.ip
         base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
         base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
         there = use_same_cv ? here : deepcopy(here)
-        return new{CV}(here, there, base_indices_here, base_indices_there, sides_and_baseindices)
+        return new{CV,N}(here, there, base_indices_here, base_indices_there, sides_and_baseindices)
     end
 end
 
