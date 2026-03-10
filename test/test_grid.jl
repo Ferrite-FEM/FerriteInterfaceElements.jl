@@ -12,9 +12,9 @@
     #                            1 ____ 2 ____ 3
     #
     grid = generate_grid(Triangle, (2,2))
-    addcellset!(grid, "bottom", Set((1,2,3,4)))
-    addcellset!(grid, "topleft", Set((5,6)))
-    addcellset!(grid, "topright", Set((7,8)))
+    addcellset!(grid, "bottom", OrderedSet((4, 2, 3, 1)))
+    addcellset!(grid, "topleft", OrderedSet((5,6)))
+    addcellset!(grid, "topright", OrderedSet((7,8)))
 
     domain_names = ["bottom", "topleft", "topright"]
     new_grid = insert_interfaces(grid, domain_names)
