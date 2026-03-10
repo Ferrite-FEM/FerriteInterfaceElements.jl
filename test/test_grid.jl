@@ -12,9 +12,9 @@
     #                            1 ____ 2 ____ 3
     #
     grid = generate_grid(Triangle, (2,2))
-    addcellset!(grid, "bottom", OrderedSet((4, 2, 3, 1)))
-    addcellset!(grid, "topleft", OrderedSet((5,6)))
-    addcellset!(grid, "topright", OrderedSet((7,8)))
+    addcellset!(grid, "bottom", Set((1,2,3,4)))
+    addcellset!(grid, "topleft", Set((5,6)))
+    addcellset!(grid, "topright", Set((7,8)))
 
     domain_names = ["bottom", "topleft", "topright"]
     new_grid = insert_interfaces(grid, domain_names)
@@ -40,9 +40,9 @@ end
 
 @testset "Inserting interfaces in 3D" begin
     grid = generate_grid(Hexahedron, (2,2,1))
-    addcellset!(grid, "bottomleft", OrderedSet((1,)))
-    addcellset!(grid, "topleft", OrderedSet((3,)))
-    addcellset!(grid, "right", OrderedSet((4,2)))
+    addcellset!(grid, "bottomleft", Set((1,)))
+    addcellset!(grid, "topleft", Set((3,)))
+    addcellset!(grid, "right", Set((2,4)))
     
     domain_names = ["bottomleft", "topleft", "right"]
     new_grid = insert_interfaces(grid, domain_names)
