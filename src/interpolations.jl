@@ -59,7 +59,7 @@ end
 
 # These are currently not used and should be updated, see issue #32
 Ferrite.edgedof_indices(ip::InterfaceCellInterpolation) = ntuple(i -> (), Ferrite.nedges(ip))
-Ferrite.faceedof_indices(ip::InterfaceCellInterpolation) = ntuple(i -> (), Ferrite.nfaces(ip))
+Ferrite.facedof_indices(ip::InterfaceCellInterpolation) = ntuple(i -> (), Ferrite.nfaces(ip))
 
 #########################################################
 # Functions for setting up the cell values
