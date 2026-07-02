@@ -2,7 +2,7 @@ module FerriteInterfaceElements
 
 import Ferrite
 import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
-    RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron,
+    RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron, RefTetrahedron,
     Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral, Tetrahedron, Hexahedron,
     ScalarInterpolation, VectorizedInterpolation, Lagrange,
     CellValues, QuadratureRule, CellCache, Grid, ExclusiveTopology, FacetIndex, Vec,
@@ -15,6 +15,7 @@ import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
     reinit!, getnquadpoints, getdetJdV, shape_value, shape_gradient, function_value, function_gradient,
     getcellset, getcells, getneighborhood
 import OrderedCollections: OrderedSet
+import VTKBase: VTKCellTypes
 
 include("cells.jl")
 include("interpolations.jl")

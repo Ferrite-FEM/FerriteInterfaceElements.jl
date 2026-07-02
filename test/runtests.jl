@@ -1,5 +1,5 @@
 using FerriteInterfaceElements
-using FerriteInterfaceElements.Ferrite
+using Ferrite
 using Test
 
 @testset "FerriteInterfaceElements.jl" begin
@@ -11,6 +11,8 @@ using Test
 
     include("test_grid.jl")
 
+    include("test_vtk_export.jl")
+    
     include("test_examples.jl")
 end
 
