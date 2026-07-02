@@ -69,6 +69,5 @@ Ferrite.faces(c::InterfaceCell{shape}) where {shape<:Ferrite.AbstractRefShape{3}
 Ferrite.facets(c::InterfaceCell) = (vertices(c.here), vertices(c.there))
 
 Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefQuadrilateral, Line, 4}}) = VTKCellTypes.VTK_QUAD
-Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefTriangle, Line, 4}}) = VTKCellTypes.VTK_QUAD
 Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefHexahedron, Quadrilateral, 8}}) = VTKCellTypes.VTK_HEXAHEDRON
 Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefPrism, Triangle, 6}}) = VTKCellTypes.VTK_WEDGE
