@@ -1,7 +1,8 @@
 module FerriteInterfaceElements
 
-import Ferrite: Ferrite, AbstractCell, AbstractRefShape, AbstractCellValues,
-    RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron,
+import Ferrite
+import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
+    RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron, RefTetrahedron,
     Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral, Tetrahedron, Hexahedron,
     ScalarInterpolation, VectorizedInterpolation, Lagrange,
     CellValues, QuadratureRule, CellCache, Grid, ExclusiveTopology, FacetIndex, Vec, Tensor, MixedTensor2,
@@ -15,7 +16,7 @@ import Ferrite: Ferrite, AbstractCell, AbstractRefShape, AbstractCellValues,
     getcellset, getcells, getneighborhood,
     ×, norm
 import OrderedCollections: OrderedSet
-#import StaticArraysCore: SMatrix, SVector
+import VTKBase: VTKCellTypes
 
 include("cells.jl")
 include("interpolations.jl")

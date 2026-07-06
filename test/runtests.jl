@@ -12,6 +12,8 @@ using Test
 
     include("test_grid.jl")
 
+    include("test_vtk_export.jl")
+    
     include("test_examples.jl")
 end
 
