@@ -105,14 +105,15 @@ Ferrite.shape_value_type(cv::InterfaceCellValues) = shape_value_type(cv.here)
 
 Ferrite.shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.here)
 
-Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords) # TODO: Needed?
+Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords)
 
 function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
-    x_here  = @view x[cv.base_indices_here]
+    n_coords_per_side = length(x) ÷ 2
+    x_here  = @view x[cv.base_indices_here[1:n_coords_per_side]]
     reinit!(cv.here, x_here)
 
     if ! (cv.here === cv.there)
-        x_there = @view x[cv.base_indices_there]
+        x_there = @view x[cv.base_indices_there[1:n_coords_per_side]]
         reinit!(cv.there, x_there)
     end
 
