@@ -19,8 +19,16 @@
     domain_names = ["bottom", "topleft", "topright"]
     new_grid = insert_interfaces(grid, domain_names)
 
-    for (nodeid, duplicate_nodeid) in [(4,11), (5,10), (5,13), (6,12), (8,14), (10,13)]
-        @test new_grid.nodes[nodeid] == new_grid.nodes[duplicate_nodeid]
+    nodepairs = Set{Tuple{Int,Int}}()
+    for cell in new_grid.cells
+        if cell isa InterfaceCell
+            for (n, m) in zip(cell.here.nodes, cell.there.nodes)
+                push!(nodepairs, (n,m))
+            end
+        end
+    end
+    for (n, m) in nodepairs
+        @test new_grid.nodes[n] == new_grid.nodes[m]
     end
     for cell in [Triangle((1, 2, 4)),
                  Triangle((2, 5, 4)),
@@ -48,8 +56,16 @@ end
     domain_names = ["bottomleft", "topleft", "right"]
     new_grid = insert_interfaces(grid, domain_names)
 
-    for (nodeid, duplicate_nodeid) in [(13, 25), (14,26), (14,21), (21,26), (11,22), (17,27), (4,24), (5,23), (5,20), (20,23), (8, 28), (2,19)]
-        @test new_grid.nodes[nodeid] == new_grid.nodes[duplicate_nodeid]
+    nodepairs = Set{Tuple{Int,Int}}()
+    for cell in new_grid.cells
+        if cell isa InterfaceCell
+            for (n, m) in zip(cell.here.nodes, cell.there.nodes)
+                push!(nodepairs, (n,m))
+            end
+        end
+    end
+    for (n, m) in nodepairs
+        @test new_grid.nodes[n] == new_grid.nodes[m]
     end
     for cell in [Hexahedron((1, 2, 5, 4, 10, 11, 14, 13)),
                  Hexahedron((19, 3, 6, 20, 22, 12, 15, 21)),
