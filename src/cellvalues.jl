@@ -16,16 +16,17 @@ To do so, set `include_R=true`.
 - `sides_and_baseindices::Tuple`: side and base function for the base `CellValues` for each base function of the `InterfaceCellValues`
 - `R::Union{AbstractVector,Nothing}`: rotation matrix of the midplane in the quadrature points
 """
-struct InterfaceCellValues{CV,TR} <: AbstractCellValues
+struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
     here::CV
     there::CV
     base_indices_here::Vector{Int}
     base_indices_there::Vector{Int}
-    sides_and_baseindices::Tuple
+    sides_and_baseindices::NTuple{N,Tuple{Symbol,Int}}
     R::TR # Union{AbstractVector,Nothing} Rotation matrix in quadrature points
 
     function InterfaceCellValues(ip::IP, here::CV; use_same_cv::Bool, include_R::Val) where {IP<:InterfaceCellInterpolation, CV<:CellValues}
-        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:getnbasefunctions(ip) )
+        N = getnbasefunctions(ip)
+        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
         base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
         base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
         there = use_same_cv ? here : deepcopy(here)
@@ -35,10 +36,11 @@ struct InterfaceCellValues{CV,TR} <: AbstractCellValues
             T = eltype(here.detJdV)
             Vector{Tensor{2, Ferrite.getrefdim(ip), T}}(undef, getnquadpoints(here))
         end
-        return new{CV,typeof(R)}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
+        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
     end
     function InterfaceCellValues(ip::IP, here::CV; use_same_cv, include_R::Val) where {IP<:VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, CV<:CellValues}
-        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:getnbasefunctions(ip) )
+        N = getnbasefunctions(ip)
+        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
         ip = ip.ip
         base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
         base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
@@ -49,7 +51,7 @@ struct InterfaceCellValues{CV,TR} <: AbstractCellValues
             T = eltype(here.detJdV)
             Vector{Tensor{2, Ferrite.getrefdim(ip), T}}(undef, getnquadpoints(here))
         end
-        return new{CV,typeof(R)}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
+        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
     end
 end
 
