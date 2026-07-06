@@ -1,5 +1,6 @@
 using FerriteInterfaceElements
-using FerriteInterfaceElements.Ferrite
+using Ferrite
+using OrderedCollections
 using Test
 
 @testset "FerriteInterfaceElements.jl" begin

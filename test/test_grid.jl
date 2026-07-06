@@ -3,8 +3,8 @@
     # |\ c6 |\ c8 |              |\ c6 | c|\ c8 |
     # |  \  |  \  |              |  \  |11|  \  |
     # | c5 \| c7 \|              | c5 \|  | c7 \|
-    # 4 ___ 5 ___ 6     --->     13___12__11___10 
-    # |\ c2 |\ c4 |              | c10  \/  c9 |
+    # 4 ___ 5 ___ 6     --->     11___10__13___12 
+    # |\ c2 |\ c4 |              | c9   \/ c10 |
     # |  \  |  \  |              4 ___  5  ___ 6
     # | c1 \| c3 \|              |\ c2  | \ c4 |
     # 1 ___ 2 ___ 3              |  \   |   \  |
@@ -12,14 +12,14 @@
     #                            1 ____ 2 ____ 3
     #
     grid = generate_grid(Triangle, (2,2))
-    addcellset!(grid, "bottom", Set((1,2,3,4)))
-    addcellset!(grid, "topleft", Set((5,6)))
-    addcellset!(grid, "topright", Set((7,8)))
+    addcellset!(grid, "bottom", OrderedSet((1,2,3,4)))
+    addcellset!(grid, "topleft", OrderedSet((5,6)))
+    addcellset!(grid, "topright", OrderedSet((7,8)))
 
     domain_names = ["bottom", "topleft", "topright"]
     new_grid = insert_interfaces(grid, domain_names)
 
-    for (nodeid, duplicate_nodeid) in [(4,13), (5,12), (5,11), (11,12), (6,10), (8,14)]
+    for (nodeid, duplicate_nodeid) in [(4,11), (5,10), (5,13), (6,12), (8,14), (10,13)]
         @test new_grid.nodes[nodeid] == new_grid.nodes[duplicate_nodeid]
     end
 
@@ -28,21 +28,21 @@
         Triangle((2, 5, 4)),
         Triangle((2, 3, 5)),
         Triangle((3, 6, 5)),
-        Triangle((13, 12, 7)),
-        Triangle((12, 8, 7)),
-        Triangle((11, 10, 14)),
-        Triangle((10, 9, 14)),
-        InterfaceCell(Line((6, 5)), Line((10, 11))),
-        InterfaceCell(Line((5, 4)), Line((12, 13))),
-        InterfaceCell(Line((12, 8)), Line((11, 14)))
+        Triangle((11, 10, 7)),
+        Triangle((10, 8, 7)),
+        Triangle((13, 12, 14)),
+        Triangle((12, 9, 14)),
+        InterfaceCell(Line((5, 4)), Line((10, 11))),
+        InterfaceCell(Line((6, 5)), Line((12, 13))),
+        InterfaceCell(Line((10, 8)), Line((13, 14)))
         ]
 end
 
 @testset "Inserting interfaces in 3D" begin
     grid = generate_grid(Hexahedron, (2,2,1))
-    addcellset!(grid, "bottomleft", Set((1,)))
-    addcellset!(grid, "topleft", Set((3,)))
-    addcellset!(grid, "right", Set((2,4)))
+    addcellset!(grid, "bottomleft", OrderedSet((1,)))
+    addcellset!(grid, "topleft", OrderedSet((3,)))
+    addcellset!(grid, "right", OrderedSet((2,4)))
     
     domain_names = ["bottomleft", "topleft", "right"]
     new_grid = insert_interfaces(grid, domain_names)
