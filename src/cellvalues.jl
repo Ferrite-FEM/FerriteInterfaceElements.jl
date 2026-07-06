@@ -4,6 +4,8 @@
 An `InterfaceCellValues` is based on two `CellValues`: one for each facet of an `InterfaceCell`.
 Since one can use the same `CellValues` for both sides, be default the same object is used for better performance.
 The keyword argument `use_same_cv` can be set to `false` to disable this behavior, if needed.
+Furthermore, the rotation matrix of the midplane in the quadrature points can be computed.
+To do so, set `include_R=true`.
 
 # Fields
 - `ip::InterfaceCellInterpolation`: interpolation on the interface
@@ -12,29 +14,44 @@ The keyword argument `use_same_cv` can be set to `false` to disable this behavio
 - `base_indices_here::Vector{Int}`: base function indices on facet "here"
 - `base_indices_there::Vector{Int}`: base function indices on facet "there"
 - `sides_and_baseindices::Tuple`: side and base function for the base `CellValues` for each base function of the `InterfaceCellValues`
+- `R::Union{AbstractVector,Nothing}`: rotation matrix of the midplane in the quadrature points
 """
-struct InterfaceCellValues{CV} <: AbstractCellValues
+struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
     here::CV
     there::CV
     base_indices_here::Vector{Int}
     base_indices_there::Vector{Int}
-    sides_and_baseindices::Tuple
+    sides_and_baseindices::NTuple{N,Tuple{Symbol,Int}}
+    R::TR # Union{AbstractVector,Nothing} Rotation matrix in quadrature points
 
-    function InterfaceCellValues(ip::IP, here::CV; use_same_cv) where {IP<:InterfaceCellInterpolation, CV<:CellValues}
-        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:getnbasefunctions(ip) )
+    function InterfaceCellValues(ip::IP, here::CV; use_same_cv::Bool, include_R::Val) where {IP<:InterfaceCellInterpolation, CV<:CellValues}
+        N = getnbasefunctions(ip)
+        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
         base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
         base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
         there = use_same_cv ? here : deepcopy(here)
-        return new{CV}(here, there, base_indices_here, base_indices_there, sides_and_baseindices)
+        R = if include_R === Val(false)
+            nothing
+        else
+            T = eltype(here.detJdV)
+            Vector{Tensor{2, Ferrite.getrefdim(ip), T}}(undef, getnquadpoints(here))
+        end
+        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
     end
-
-    function InterfaceCellValues(ip::IP, here::CV; use_same_cv) where {IP<:VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, CV<:CellValues}
-        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:getnbasefunctions(ip) )
+    function InterfaceCellValues(ip::IP, here::CV; use_same_cv, include_R::Val) where {IP<:VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, CV<:CellValues}
+        N = getnbasefunctions(ip)
+        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
         ip = ip.ip
         base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
         base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
         there = use_same_cv ? here : deepcopy(here)
-        return new{CV}(here, there, base_indices_here, base_indices_there, sides_and_baseindices)
+        R = if include_R === Val(false)
+            nothing
+        else
+            T = eltype(here.detJdV)
+            Vector{Tensor{2, Ferrite.getrefdim(ip), T}}(undef, getnquadpoints(here))
+        end
+        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
     end
 end
 
@@ -43,17 +60,17 @@ InterfaceCellValues(qr::QuadratureRule, args...; kwargs...) = InterfaceCellValue
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
             ip::InterfaceCellInterpolation, 
             ip_geo::VectorizedInterpolation{sdim,<:Any,<:Any,<:InterfaceCellInterpolation} = default_geometric_interpolation(ip); 
-            use_same_cv=true, kwargs...) where {T, sdim}
+            use_same_cv=true, include_R=Val(false), kwargs...) where {T, sdim}
     cv = CellValues(T, qr, ip.base, VectorizedInterpolation{sdim}(ip_geo.ip.base); kwargs...)
-    return InterfaceCellValues(ip, cv; use_same_cv=use_same_cv)
+    return InterfaceCellValues(ip, cv; use_same_cv=use_same_cv, include_R = isa(include_R, Bool) ? Val(include_R) : include_R)
 end
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
             ip::VectorizedInterpolation{vdim,<:Any,<:Any,<:InterfaceCellInterpolation}, 
             ip_geo::VectorizedInterpolation{sdim,<:Any,<:Any,<:InterfaceCellInterpolation} = default_geometric_interpolation(ip); 
-            use_same_cv=true, kwargs...) where {T, vdim, sdim}
+            use_same_cv=true, include_R=Val(false), kwargs...) where {T, vdim, sdim}
     cv = CellValues(T, qr, VectorizedInterpolation{vdim}(ip.ip.base), 
                            VectorizedInterpolation{sdim}(ip_geo.ip.base); kwargs...)
-    return InterfaceCellValues(ip, cv; use_same_cv=use_same_cv)
+    return InterfaceCellValues(ip, cv; use_same_cv=use_same_cv, include_R = isa(include_R, Bool) ? Val(include_R) : include_R)
 end
 
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
@@ -90,12 +107,38 @@ Ferrite.shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.he
 
 Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords) # TODO: Needed?
 
-function Ferrite.reinit!(cv::InterfaceCellValues, x::AbstractVector{Vec{sdim,T}}) where {sdim, T}
-    reinit!(cv.here, @view x[cv.base_indices_here])
-    if cv.here === cv.there
-        reinit!(cv.there, @view x[cv.base_indices_there])
+function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
+    x_here  = @view x[cv.base_indices_here]
+    reinit!(cv.here, x_here)
+
+    if ! (cv.here === cv.there)
+        x_there = @view x[cv.base_indices_there]
+        reinit!(cv.there, x_there)
+    end
+
+    if cv.R !== nothing
+        x_there = @view x[cv.base_indices_there]
+        for qp in 1:getnquadpoints(cv.here)
+            mapping_here  = Ferrite.calculate_mapping(cv.here.geo_mapping,  qp, x_here)
+            mapping_there = Ferrite.calculate_mapping(cv.there.geo_mapping, qp, x_there)
+            J_here  = Ferrite.getjacobian(mapping_here)
+            J_there = Ferrite.getjacobian(mapping_there)
+            J = (J_here + J_there) / 2
+            cv.R[qp] = _get_R_from_J(J)
+        end
     end
     return nothing
+end
+function _get_R_from_J(J::MixedTensor2{2,1,T}) where T 
+    v1 = J[:, 1]
+    v2 = Vec{2,T}((-v1[2], v1[1]))
+    return Tensor{2,2,T}(((v1/norm(v1))..., (v2/norm(v2))...))
+end
+function _get_R_from_J(J::MixedTensor2{3,2,T}) where T 
+    v1 = J[:, 1]
+    v3 = v1 × J[:, 2]
+    v2 = v3 × v1
+    return Tensor{2,3,T}(((v1/norm(v1))..., (v2/norm(v2))..., (v3/norm(v3))...))
 end
 
 get_side_and_baseindex(cv::InterfaceCellValues, i::Integer) = cv.sides_and_baseindices[i]
@@ -275,6 +318,15 @@ Compute the jump of the function gradient in a quadrature point.
 """
 function Ferrite.function_gradient_jump(cv::InterfaceCellValues, qp::Int, u::AbstractVector)
     return function_gradient(cv, qp, u, false) - function_gradient(cv, qp, u, true)
+end
+
+"""
+    midplane_rotation(cv::InterfaceCellValues, qp::Int)
+
+Compute the rotation matrix of the midplane in quadrature point.
+"""
+function midplane_rotation(cv::InterfaceCellValues, qp::Int)
+    return cv.R[qp]
 end
 
 function Base.show(io::IO, d::MIME"text/plain", cv::InterfaceCellValues)

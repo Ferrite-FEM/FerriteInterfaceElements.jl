@@ -1,11 +1,10 @@
 module FerriteInterfaceElements
 
-import Ferrite
 import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
     RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron, RefTetrahedron,
     Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral, Tetrahedron, Hexahedron,
     ScalarInterpolation, VectorizedInterpolation, Lagrange,
-    CellValues, QuadratureRule, CellCache, Grid, ExclusiveTopology, FacetIndex, Vec,
+    CellValues, QuadratureRule, CellCache, Grid, ExclusiveTopology, FacetIndex, Vec, Tensor, MixedTensor2,
     getnbasefunctions, getngeobasefunctions, getorder, n_components, getrefshape,
     vertexdof_indices, edgedof_interior_indices, facedof_interior_indices, volumedof_interior_indices,
     vertices, facets, edges,
@@ -13,7 +12,8 @@ import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
     checkbounds, checkquadpoint, function_value_init, function_gradient_init,
     shape_value_type, shape_gradient_type,
     reinit!, getnquadpoints, getdetJdV, shape_value, shape_gradient, function_value, function_gradient,
-    getcellset, getcells, getneighborhood
+    getcellset, getcells, getneighborhood,
+    ×, norm
 import OrderedCollections: OrderedSet
 import VTKBase: VTKCellTypes
 
@@ -36,6 +36,7 @@ export
     function_value_jump,
     function_gradient_jump,
     getdetJdV_average,
+    midplane_rotation,
     insert_interfaces
 
 end

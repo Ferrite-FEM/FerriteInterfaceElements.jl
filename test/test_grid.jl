@@ -65,13 +65,13 @@ end
     grid = generate_grid(Tetrahedron, (10,10,10), Vec((-0.5,-0.5,-0.5)), Vec((0.5,0.5,0.5)))
     addcellset!(grid, "1", x -> true)
     set1 = getcellset(grid, "1")
-    addcellset!(grid, "2", x -> (-0.3 ≤ x[1] ≤ 0.3) &&
-                                (-0.3 ≤ x[2] ≤ 0.3) &&
-                                (-0.3 ≤ x[3] ≤ 0.3))
+    addcellset!(grid, "2", x -> (-0.31 < x[1] < 0.31) &&
+                                (-0.31 < x[2] < 0.31) &&
+                                (-0.31 < x[3] < 0.31))
     set2 = getcellset(grid, "2")
-    addcellset!(grid, "3", x -> ((-0.1 ≤ x[1] ≤ 0.1) && (-0.1 ≤ x[2] ≤ 0.1)) ||
-                                ((-0.1 ≤ x[1] ≤ 0.1) && (-0.1 ≤ x[3] ≤ 0.1)) ||
-                                ((-0.1 ≤ x[2] ≤ 0.1) && (-0.1 ≤ x[3] ≤ 0.1)))
+    addcellset!(grid, "3", x -> ((-0.11 < x[1] < 0.11) && (-0.11 < x[2] < 0.11)) ||
+                                ((-0.11 < x[1] < 0.11) && (-0.11 < x[3] < 0.11)) ||
+                                ((-0.11 < x[2] < 0.11) && (-0.11 < x[3] < 0.11)))
     set3 = getcellset(grid, "3")
     setdiff!(set1, set2, set3)
     setdiff!(set3, set2)
