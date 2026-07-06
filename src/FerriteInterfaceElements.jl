@@ -15,7 +15,7 @@ import Ferrite: Ferrite, AbstractCell, AbstractRefShape, AbstractCellValues,
     getcellset, getcells, getneighborhood,
     ×, norm
 import OrderedCollections: OrderedSet
-import StaticArraysCore: SMatrix, SVector
+#import StaticArraysCore: SMatrix, SVector
 
 include("cells.jl")
 include("interpolations.jl")

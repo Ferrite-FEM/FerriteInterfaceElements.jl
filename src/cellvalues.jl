@@ -131,7 +131,7 @@ function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim
 end
 function _get_R_from_J(J::MixedTensor2{2,1,T}) where T 
     v1 = J[:, 1]
-    v2 = SVector{2,T}((-v1[2], v1[1]))
+    v2 = Vec{2,T}((-v1[2], v1[1]))
     return Tensor{2,2,T}(((v1/norm(v1))..., (v2/norm(v2))...))
 end
 function _get_R_from_J(J::MixedTensor2{3,2,T}) where T 
