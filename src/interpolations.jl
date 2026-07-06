@@ -28,6 +28,11 @@ Ferrite.adjust_dofs_during_distribution(ip::InterfaceCellInterpolation) = Ferrit
 
 Ferrite.n_components(ip::InterfaceCellInterpolation) = n_components(ip.base)
 
+# Evaluation of solution field for ParaView export
+Ferrite.reference_shape_value(::InterfaceCellInterpolation{RefType, Order}, ξ::Vec, i::Int64) where {RefType, Order} =
+    Ferrite.reference_shape_value(Lagrange{RefType, Order}(), ξ, i)
+
+
 function Ferrite.vertexdof_indices(ip::InterfaceCellInterpolation)
     here  = Ferrite.vertexdof_indices(ip.base)
     offset = _nvertexdofs(ip.base)

@@ -9,3 +9,6 @@ Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
+
+[sources]
+FerriteInterfaceElements = {path = ".."}

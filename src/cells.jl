@@ -67,3 +67,17 @@ Ferrite.vertices(c::InterfaceCell) = (vertices(c.here)..., vertices(c.there)...)
 Ferrite.edges(c::InterfaceCell) = (edges(c.here)..., edges(c.there)...)
 Ferrite.faces(c::InterfaceCell{shape}) where {shape<:Ferrite.AbstractRefShape{3}} = (vertices(c.here), vertices(c.there))
 Ferrite.facets(c::InterfaceCell) = (vertices(c.here), vertices(c.there))
+
+# We assign to the interface the corresponding geometry
+Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefQuadrilateral, Line, 4}}) = VTKCellTypes.VTK_QUAD
+Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefHexahedron, Quadrilateral, 8}}) = VTKCellTypes.VTK_HEXAHEDRON
+Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefPrism, Triangle, 6}}) = VTKCellTypes.VTK_WEDGE
+
+Ferrite.geometric_interpolation(cell::Type{InterfaceCell{RefQuadrilateral, Line, 4}}) = Lagrange{RefQuadrilateral, 1}()
+Ferrite.geometric_interpolation(cell::Type{InterfaceCell{RefHexahedron, Quadrilateral, 8}}) = Lagrange{RefHexahedron, 1}()
+Ferrite.geometric_interpolation(cell::Type{InterfaceCell{RefPrism, Triangle, 6}}) = Lagrange{RefPrism, 1}()
+
+getinterfaceshape(cell::Triangle) = RefLine
+getinterfaceshape(cell::Quadrilateral) = RefLine
+getinterfaceshape(cell::Tetrahedron) = RefTriangle
+getinterfaceshape(cell::Hexahedron) = RefQuadrilateral
