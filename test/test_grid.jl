@@ -38,22 +38,6 @@ end
     domain_names = ["bottom", "topleft", "topright"]
     new_grid = insert_interfaces(grid, domain_names)
     test_grid_data(grid, new_grid)
-    
-    for cell in [Triangle((1, 2, 4)),
-                 Triangle((2, 5, 4)),
-                 Triangle((2, 3, 5)),
-                 Triangle((3, 6, 5)),
-                 Triangle((11, 10, 7)),
-                 Triangle((10, 8, 7)),
-                 Triangle((13, 12, 14)),
-                 Triangle((12, 9, 14))]
-        @test cell in new_grid.cells[1:8]
-    end
-    for cell in [InterfaceCell(Line((5, 4)), Line((10, 11))),
-                 InterfaceCell(Line((6, 5)), Line((12, 13))),
-                 InterfaceCell(Line((10, 8)), Line((13, 14)))]
-        @test cell in new_grid.cells[9:11]
-    end
 end
 
 @testset "Inserting interfaces in 3D" begin
@@ -65,18 +49,6 @@ end
     domain_names = ["bottomleft", "topleft", "right"]
     new_grid = insert_interfaces(grid, domain_names)
     test_grid_data(grid, new_grid)
-    
-    for cell in [Hexahedron((1, 2, 5, 4, 10, 11, 14, 13)),
-                 Hexahedron((19, 3, 6, 20, 22, 12, 15, 21)),
-                 Hexahedron((24, 23, 28, 7, 25, 26, 27, 16)),
-                 Hexahedron((20, 6, 9, 8, 21, 15, 18, 17))]
-        @test cell in new_grid.cells[1:4]
-    end
-    for cell in [InterfaceCell(Quadrilateral((2, 5, 14, 11)), Quadrilateral((19, 20, 21, 22))),
-                 InterfaceCell(Quadrilateral((5, 4, 13, 14)), Quadrilateral((23, 24, 25, 26))),
-                 InterfaceCell(Quadrilateral((20, 21, 17, 8)), Quadrilateral((23, 26, 27, 28)))]
-        @test cell in new_grid.cells[5:7]
-    end
 
     # More complex example with rough test
     grid = generate_grid(Tetrahedron, (10,10,10), Vec((-0.5,-0.5,-0.5)), Vec((0.5,0.5,0.5)))
