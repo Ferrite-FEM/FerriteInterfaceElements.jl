@@ -6,11 +6,13 @@ authors = ["Kim Louisa Auth <kim.auth@chalmers.se>", "Elias Börjesson <elias.bo
 [deps]
 Ferrite = "c061ca5d-56c9-439f-9c0e-210fe06d3992"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+VTKBase = "4004b06d-e244-455f-a6ce-a5f9919cc534"
 
 [compat]
 Ferrite = "1.4"
 OrderedCollections = "1"
 julia = "1.12"
+VTKBase = "1.0.1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
