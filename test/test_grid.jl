@@ -1,3 +1,22 @@
+function test_grid_data(old::Grid, new::Grid)
+        # Check if all InterfaceCell's contain new nodes on at least one side and that node pairs have the same coordinates
+    n = length(old.nodes)
+    nodepairs = Set{Tuple{Int,Int}}()
+    for cell in new.cells
+        if cell isa InterfaceCell
+            h, t = cell.here.nodes, cell.there.nodes
+            @test (any( h .≤ n ) && all( t .> n )) || (all( h .> n ) && any( t .≤ n ))
+            for (n, m) in zip(h, t)
+                push!(nodepairs, (n,m))
+            end
+        end
+    end
+    for (n, m) in nodepairs
+        @test new.nodes[n] == new.nodes[m]
+    end
+    return nothing
+end
+
 @testset "Inserting interfaces in 2D" begin
     # 7 ___ 8 ___ 9              7 ___ 8__14___ 9
     # |\ c6 |\ c8 |              |\ c6 | c|\ c8 |
@@ -18,18 +37,8 @@
 
     domain_names = ["bottom", "topleft", "topright"]
     new_grid = insert_interfaces(grid, domain_names)
-
-    nodepairs = Set{Tuple{Int,Int}}()
-    for cell in new_grid.cells
-        if cell isa InterfaceCell
-            for (n, m) in zip(cell.here.nodes, cell.there.nodes)
-                push!(nodepairs, (n,m))
-            end
-        end
-    end
-    for (n, m) in nodepairs
-        @test new_grid.nodes[n] == new_grid.nodes[m]
-    end
+    test_grid_data(grid, new_grid)
+    
     for cell in [Triangle((1, 2, 4)),
                  Triangle((2, 5, 4)),
                  Triangle((2, 3, 5)),
@@ -55,18 +64,8 @@ end
     
     domain_names = ["bottomleft", "topleft", "right"]
     new_grid = insert_interfaces(grid, domain_names)
-
-    nodepairs = Set{Tuple{Int,Int}}()
-    for cell in new_grid.cells
-        if cell isa InterfaceCell
-            for (n, m) in zip(cell.here.nodes, cell.there.nodes)
-                push!(nodepairs, (n,m))
-            end
-        end
-    end
-    for (n, m) in nodepairs
-        @test new_grid.nodes[n] == new_grid.nodes[m]
-    end
+    test_grid_data(grid, new_grid)
+    
     for cell in [Hexahedron((1, 2, 5, 4, 10, 11, 14, 13)),
                  Hexahedron((19, 3, 6, 20, 22, 12, 15, 21)),
                  Hexahedron((24, 23, 28, 7, 25, 26, 27, 16)),
