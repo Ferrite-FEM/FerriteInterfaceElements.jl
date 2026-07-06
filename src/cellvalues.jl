@@ -129,12 +129,12 @@ function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim
     end
     return nothing
 end
-function _get_R_from_J(J::SMatrix{2,1,T}) where T 
+function _get_R_from_J(J::MixedTensor2{2,1,T}) where T 
     v1 = J[:, 1]
     v2 = SVector{2,T}((-v1[2], v1[1]))
     return Tensor{2,2,T}(((v1/norm(v1))..., (v2/norm(v2))...))
 end
-function _get_R_from_J(J::SMatrix{3,2,T}) where T 
+function _get_R_from_J(J::MixedTensor2{3,2,T}) where T 
     v1 = J[:, 1]
     v3 = v1 × J[:, 2]
     v2 = v3 × v1
