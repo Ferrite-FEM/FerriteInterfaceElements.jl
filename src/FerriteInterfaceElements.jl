@@ -1,5 +1,6 @@
 module FerriteInterfaceElements
 
+import Ferrite
 import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
     RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron, RefTetrahedron,
     Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral, Tetrahedron, Hexahedron,
