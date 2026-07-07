@@ -26,4 +26,9 @@
     expectedtype = InterfaceCellInterpolation{RefQuadrilateral, 1, Lagrange{RefLine,1}}
     @test Ferrite.default_geometric_interpolation(testcelltype) isa expectedtype
     @test Ferrite.default_geometric_interpolation(Ferrite.default_geometric_interpolation(testcelltype)) isa VectorizedInterpolation{2, RefQuadrilateral, <:Any, expectedtype}
+
+    @test_throws AssertionError FerriteInterfaceElements.get_interface_index(ip, :here, 0)
+    @test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :here, 100)
+    @test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :there, 100)
+    @test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :test, 1)
 end

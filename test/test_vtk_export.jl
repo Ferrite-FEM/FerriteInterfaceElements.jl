@@ -17,7 +17,9 @@ using Ferrite, FerriteInterfaceElements, OrderedCollections
             set_interface = getcellset(grid2, "interfaces")
             add!(SubDofHandler(dh, set_interface), :u, InterfaceCellInterpolation(Lagrange{FerriteInterfaceElements.getinterfaceshape(grid.cells[1]), 1}()))
             close!(dh)
-            VTKGridFile("debug.vtu", grid2) do vtk
+            temp = tempdir()
+            file = joinpath(temp, "output.vtu")
+            VTKGridFile(file, grid2) do vtk
                 Ferrite.write_solution(vtk, dh, rand(ndofs(dh)))
                 Ferrite.write_cellset(vtk, grid2)
             end

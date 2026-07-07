@@ -93,6 +93,7 @@ function get_interface_index(ip::InterfaceCellInterpolation, side::Symbol, i::In
     nv = _nvertexdofs(ip.base)
     ne = _nedgedofs(ip.base)
     nf = _nfacedofs(ip.base)
+    @assert i > 0
     if side == :here
         if i ≤ nv
             return i
