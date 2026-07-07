@@ -1,11 +1,10 @@
 ######################################################################
 # Inserting cells into a grid
 ######################################################################
-
 """
     insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
 
-Return a new grid with `InterfaceCell`s inserted betweenthe domains defined by `domain_names`.
+Return a new grid with `InterfaceCell`s inserted between the domains defined by `domain_names`.
 The new grid provides additional cell sets. The set `"interfaces"` contains all new `InterfaceCell`s
 and two sets are provided for each combination of domain names: `"domain1-domain2-interface"` and 
 `"domain2-domain1-interface"` both using the same `Set`.
@@ -27,7 +26,7 @@ function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
     nodes = copy(grid.nodes)
     cells_generic = Vector{Ferrite.AbstractCell}(grid.cells) # copies
 
-    while !isempty(cellsets)
+    while ! isempty(cellsets)
         name, cellset = pop!(cellsets)
         for cellid in cellset
             cell = getcells(grid, cellid)
@@ -53,7 +52,7 @@ function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
                                 # generate a new node for (_name, _cellset)
                                 push!(nodes, nodes[nodeid])
                                 node_mapping[_name][nodeid] = length(nodes) # main node
-                            elseif isnothing(new_nodeid) && !isnothing(_new_nodeid)
+                            elseif isnothing(new_nodeid) && ! isnothing(_new_nodeid)
                                 # node has been duplicated at least once, so it already has a main grain
                                 # generate a new node for (name, cellset)
                                 push!(nodes, nodes[nodeid])
@@ -63,8 +62,7 @@ function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
                         new_nodeids = Tuple(node_mapping[name][i] for i in facetnodeids)
                         _new_nodeids = Tuple(node_mapping[_name][i] for i in facetnodeids)
                         # generate new cell
-                        @assert typeof(cell) == typeof(getcells(grid, _cellid))
-                        interface_cell = create_interface_cell(typeof(cell), new_nodeids, _new_nodeids)
+                        interface_cell = create_interface_cell(typeof(cell), typeof(getcells(grid, _cellid)), new_nodeids, _new_nodeids)
                         push!(cells_generic, interface_cell)
                         push!(interfacesets["$(name)-$(_name)-interface"], length(cells_generic))
                     end
@@ -94,22 +92,29 @@ function insert_interfaces(grid, domain_names; topology=ExclusiveTopology(grid))
 end
 
 """
-    create_interface_cell(::Type{C}, nodes_here, nodes_there) where {C}
+    create_interface_cell(::Type{C₁}, ::Type{C₂}, nodes_here, nodes_there) where {C₁,C₂}
 
 Return a suitable `InterfaceCell` connecting the facets with `nodes_here` and `nodes_there`.
 """
-function create_interface_cell(::Type{C}, nodes_here, nodes_there) where {C}
-    Cbase = get_interface_base_cell_type(C)
+function create_interface_cell(::Type{C₁}, ::Type{C₂}, nodes_here, nodes_there) where {C₁,C₂}
+    Cbase = get_interface_base_cell_type(C₁, C₂)
     return InterfaceCell(Cbase(nodes_here), Cbase(nodes_there))
 end
+
+
 """
-    get_interface_base_cell_type(::Type{<:AbstractCell})
+    get_interface_base_cell_type(::Type{<:AbstractCell}, ::Type{<:AbstractCell})
 
 Return a suitable base type for connecting two cells of given type with an `InterfaceCell`.
 """
-get_interface_base_cell_type(::Type{Triangle}) = Line
-get_interface_base_cell_type(::Type{QuadraticTriangle}) = QuadraticLine
-get_interface_base_cell_type(::Type{Quadrilateral}) = Line
-get_interface_base_cell_type(::Type{QuadraticQuadrilateral}) = QuadraticLine
-get_interface_base_cell_type(::Type{Tetrahedron}) = Triangle
-get_interface_base_cell_type(::Type{Hexahedron}) = Quadrilateral
+get_interface_base_cell_type(::Type{Triangle}, ::Type{Triangle}) = Line
+get_interface_base_cell_type(::Type{QuadraticTriangle}, ::Type{QuadraticTriangle}) = QuadraticLine
+get_interface_base_cell_type(::Type{Quadrilateral}, ::Type{Quadrilateral}) = Line
+get_interface_base_cell_type(::Type{QuadraticQuadrilateral}, ::Type{QuadraticQuadrilateral}) = QuadraticLine
+get_interface_base_cell_type(::Type{Tetrahedron}, ::Type{Tetrahedron}) = Triangle
+get_interface_base_cell_type(::Type{Hexahedron}, ::Type{Hexahedron}) = Quadrilateral
+
+get_interface_base_cell_type(::Type{Triangle}, ::Type{Quadrilateral}) = Line
+get_interface_base_cell_type(::Type{Quadrilateral}, ::Type{Triangle}) = Line
+get_interface_base_cell_type(::Type{QuadraticTriangle}, ::Type{QuadraticQuadrilateral}) = QuadraticLine
+get_interface_base_cell_type(::Type{QuadraticQuadrilateral}, ::Type{QuadraticTriangle}) = QuadraticLine

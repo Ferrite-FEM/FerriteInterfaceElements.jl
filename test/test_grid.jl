@@ -133,3 +133,31 @@ end
     @test length(getcells(newgrid, "1-3-interface")) == 192
     @test length(getcells(newgrid, "2-3-interface")) == 48
 end
+
+@testset "Inserting interfaces in 2D for a mixed grid" begin
+    # 7 ___ 8 ___ 9              7 ___ 8__14___ 9
+    # |     |     |              |     |  |     |
+    # | c4  | c5  |              |  c4 |c8| c5  |
+    # |     |     |              |     |  |     |
+    # 4 ___ 5 ___ 6     --->     11___10__13___12 
+    # |\ c2 |     |              | c6   \/ c7 |
+    # |  \  | c3  |              4 ___  5  ___ 6
+    # | c1 \|     |              |\ c2  |      |
+    # 1 ___ 2 ___ 3              |  \   |  c3  |
+    #                            | c1 \ |      |
+    #                            1 ____ 2 ____ 3
+    #
+    nodes = Node.([ Vec((-1.0, -1.0)), Vec((0.0, -1.0)), Vec((1.0, -1.0)),
+                    Vec((-1.0,  0.0)), Vec((0.0,  0.0)), Vec((1.0,  0.0)),
+                    Vec((-1.0,  1.0)), Vec((0.0,  1.0)), Vec((1.0,  1.0))])
+    cells = [Triangle((1,2,4)), Triangle((2,5,4)), Quadrilateral((2,3,6,5)), Quadrilateral((4,5,8,7)), Quadrilateral((5,6,9,8))]
+    grid = Grid(cells, nodes)
+    addcellset!(grid, "bottom", OrderedSet((1,2,3)))
+    addcellset!(grid, "topleft", OrderedSet((4,)))
+    addcellset!(grid, "topright", OrderedSet((5,)))
+
+    domain_names = ["bottom", "topleft", "topright"]
+    new_grid = insert_interfaces(grid, domain_names)
+    test_grid_data(grid, new_grid)
+end
+
