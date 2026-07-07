@@ -37,6 +37,7 @@
             @test all(abs.(function_gradient_average(cv, qp, u)) .≤ 1e-14)
             @test all(abs.(function_gradient_jump(cv, qp, u)) .≤ 1e-14)
             @test getdetJdV_average(cv, qp) == (getdetJdV(cv.here, qp) + getdetJdV(cv.there, qp)) / 2
+            precompile(function_value_jump, (typeof(cv), typeof(qp), typeof(u)))
             n = @allocated function_value_jump(cv, qp, u)
             @test n == 0
         end

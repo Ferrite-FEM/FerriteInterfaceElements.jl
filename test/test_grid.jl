@@ -161,3 +161,22 @@ end
     test_grid_data(grid, new_grid)
 end
 
+@testset "Inserting interfaces in 3D for a mixed grid" begin
+    nodes = Node.([ Vec((-1.0, -1.0, -1.0)), Vec(( 0.0, -1.0, -1.0)), Vec(( 0.0, 0.0, -1.0)), Vec((-1.0,  0.0, -1.0)), # bottom of pyramids 1+2
+                    Vec((-1.0, -1.0,  0.0)), # tip of pyramid 1
+                    Vec((-1.0, -1.0, -2.0)), # tip of pyramid 2
+                    Vec((-1.0, -2.0, -1.0)), Vec(( 0.0, -2.0, -1.0)), # bottom of pyramid 3
+                    Vec((-1.0, -1.0, -2.0)), Vec((-1.0, -2.0, -2.0)), # wedge 1
+                    ])
+    cells = [Pyramid((1,2,3,4,5)), Pyramid((1,2,3,4,6)), Pyramid((1,2,8,7,5)), Wedge((1,2,9,8,7,10))] 
+    grid = Grid(cells, nodes)
+    addcellset!(grid, "p 1", OrderedSet((1,)))
+    addcellset!(grid, "p 2", OrderedSet((2,)))
+    addcellset!(grid, "p 3", OrderedSet((3,)))
+    addcellset!(grid, "w 1", OrderedSet((4,)))
+    
+    domain_names = ["p 1", "p 2", "p 3", "w 1"]
+    new_grid = insert_interfaces(grid, domain_names)
+    @test length(new_grid.cells) == 7
+    @test length(new_grid.nodes) == 21
+end

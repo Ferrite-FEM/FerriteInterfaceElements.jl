@@ -97,7 +97,7 @@ end
 Return a suitable `InterfaceCell` connecting the facets with `nodes_here` and `nodes_there`.
 """
 function create_interface_cell(::Type{C₁}, ::Type{C₂}, nodes_here, nodes_there) where {C₁,C₂}
-    Cbase = get_interface_base_cell_type(C₁, C₂)
+    Cbase = get_interface_base_cell_type(C₁, C₂, nodes_here)
     return InterfaceCell(Cbase(nodes_here), Cbase(nodes_there))
 end
 
@@ -107,14 +107,24 @@ end
 
 Return a suitable base type for connecting two cells of given type with an `InterfaceCell`.
 """
-get_interface_base_cell_type(::Type{Triangle}, ::Type{Triangle}) = Line
-get_interface_base_cell_type(::Type{QuadraticTriangle}, ::Type{QuadraticTriangle}) = QuadraticLine
-get_interface_base_cell_type(::Type{Quadrilateral}, ::Type{Quadrilateral}) = Line
-get_interface_base_cell_type(::Type{QuadraticQuadrilateral}, ::Type{QuadraticQuadrilateral}) = QuadraticLine
-get_interface_base_cell_type(::Type{Tetrahedron}, ::Type{Tetrahedron}) = Triangle
-get_interface_base_cell_type(::Type{Hexahedron}, ::Type{Hexahedron}) = Quadrilateral
+get_interface_base_cell_type(::Type{Triangle}, ::Type{Triangle}, ::Any) = Line
+get_interface_base_cell_type(::Type{QuadraticTriangle}, ::Type{QuadraticTriangle}, ::Any) = QuadraticLine
+get_interface_base_cell_type(::Type{Quadrilateral}, ::Type{Quadrilateral}, ::Any) = Line
+get_interface_base_cell_type(::Type{QuadraticQuadrilateral}, ::Type{QuadraticQuadrilateral}, ::Any) = QuadraticLine
+get_interface_base_cell_type(::Type{Tetrahedron}, ::Type{Tetrahedron}, ::Any) = Triangle
+get_interface_base_cell_type(::Type{Hexahedron}, ::Type{Hexahedron}, ::Any) = Quadrilateral
 
-get_interface_base_cell_type(::Type{Triangle}, ::Type{Quadrilateral}) = Line
-get_interface_base_cell_type(::Type{Quadrilateral}, ::Type{Triangle}) = Line
-get_interface_base_cell_type(::Type{QuadraticTriangle}, ::Type{QuadraticQuadrilateral}) = QuadraticLine
-get_interface_base_cell_type(::Type{QuadraticQuadrilateral}, ::Type{QuadraticTriangle}) = QuadraticLine
+get_interface_base_cell_type(::Type{Triangle}, ::Type{Quadrilateral}, ::Any) = Line
+get_interface_base_cell_type(::Type{Quadrilateral}, ::Type{Triangle}, ::Any) = Line
+get_interface_base_cell_type(::Type{QuadraticTriangle}, ::Type{QuadraticQuadrilateral}, ::Any) = QuadraticLine
+get_interface_base_cell_type(::Type{QuadraticQuadrilateral}, ::Type{QuadraticTriangle}, ::Any) = QuadraticLine
+
+function get_interface_base_cell_type(::Type{C₁}, ::Type{C₂}, nodes) where {C₁<:Union{Pyramid,Wedge}, C₂<:Union{Pyramid,Wedge}}
+    if length(nodes) == 4
+        return Quadrilateral
+    elseif length(nodes) == 3
+        return Triangle
+    end
+    throw(ErrorException("No feasible base type for InterfaceCell!"))
+    return nothing    
+end

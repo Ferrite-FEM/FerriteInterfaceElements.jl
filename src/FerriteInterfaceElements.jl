@@ -3,7 +3,7 @@ module FerriteInterfaceElements
 import Ferrite
 import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
     RefLine, RefQuadrilateral, RefTriangle, RefPrism, RefHexahedron, RefTetrahedron,
-    Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral, Tetrahedron, Hexahedron,
+    Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral, Tetrahedron, Hexahedron, Pyramid, Wedge,
     ScalarInterpolation, VectorizedInterpolation, Lagrange,
     CellValues, QuadratureRule, CellCache, Grid, ExclusiveTopology, FacetIndex, Vec, Tensor, MixedTensor2,
     getnbasefunctions, getngeobasefunctions, getorder, n_components, getrefshape,
