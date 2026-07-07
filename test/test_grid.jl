@@ -2,8 +2,10 @@ function test_grid_data(old::Grid, new::Grid)
         # Check if all InterfaceCell's contain new nodes on at least one side and that node pairs have the same coordinates
     n = length(old.nodes)
     nodepairs = Set{Tuple{Int,Int}}()
-    for cell in new.cells
+    interfacecellids = Set{Int}()
+    for (i, cell) in enumerate(new.cells)
         if cell isa InterfaceCell
+            push!(interfacecellids, i)
             h, t = cell.here.nodes, cell.there.nodes
             @test (any( h .≤ n ) && all( t .> n )) || (all( h .> n ) && any( t .≤ n ))
             for (n, m) in zip(h, t)
@@ -13,6 +15,67 @@ function test_grid_data(old::Grid, new::Grid)
     end
     for (n, m) in nodepairs
         @test new.nodes[n] == new.nodes[m]
+    end
+        # Reconstruct cellsets based on interfaces
+    nodesets = [Set{Int}(), Set{Int}(), Set{Int}(), Set{Int}()]
+    cell = new.cells[pop!(interfacecellids)]
+    for (n, m) in zip(cell.here.nodes, cell.there.nodes)
+        push!(nodesets[1], n)
+        push!(nodesets[2], m)
+    end
+            # Find nodes on same side of interfaces
+    while ! isempty(interfacecellids)
+        cell = new.cells[pop!(interfacecellids)]
+        for nodes in (cell.here.nodes, cell.there.nodes)
+                # Search for a set with node overlap
+            foundconnection = false
+            for set in nodesets
+                if any( [n in set for n in nodes] )
+                    foundconnection = true
+                    for n in nodes
+                        push!(set, n)
+                    end
+                    break
+                end
+            end
+                # If no node overlap, add nodes to empty set
+            if ! foundconnection
+                for set in nodesets
+                    if isempty(set)
+                        for n in nodes
+                            push!(set, n)
+                        end
+                        break
+                    end
+                end
+            end
+                # Merge sets with overlap
+            for i in 1:length(nodesets)
+                for j in i+1:length(nodesets)
+                    if ! isempty( nodesets[i] ∩ nodesets[j] )
+                        union!(nodesets[i], nodesets[j])
+                        empty!(nodesets[j])
+                    end
+                end
+            end
+        end
+    end
+    filter!(s -> ! isempty(s), nodesets) # One set should be empty
+        # Collect cells according to node sets
+    cellsets = [OrderedSet{Int}(), OrderedSet{Int}(), OrderedSet{Int}()]
+    for (cellid, cell) in enumerate(new.cells)
+        if ! (cell isa InterfaceCell)
+            for (i, set) in enumerate(nodesets)
+                if any([n in set for n in cell.nodes])
+                    push!(cellsets[i], cellid)
+                    break
+                end
+            end
+        end
+    end
+        # Test reconstructed cellsets
+    for set in cellsets
+        @test any( [sort(set) == sort(oldset) for oldset in values(old.cellsets)] )
     end
     return nothing
 end
