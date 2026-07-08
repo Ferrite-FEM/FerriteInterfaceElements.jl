@@ -85,7 +85,7 @@ end
     # |\ c6 |\ c8 |              |\ c6 | c|\ c8 |
     # |  \  |  \  |              |  \  |11|  \  |
     # | c5 \| c7 \|              | c5 \|  | c7 \|
-    # 4 ___ 5 ___ 6     --->     11___10__13___12 
+    # 4 ___ 5 ___ 6     --->     11___10__13___12
     # |\ c2 |\ c4 |              | c9   \/ c10 |
     # |  \  |  \  |              4 ___  5  ___ 6
     # | c1 \| c3 \|              |\ c2  | \ c4 |
@@ -101,6 +101,23 @@ end
     domain_names = ["bottom", "topleft", "topright"]
     new_grid = insert_interfaces(grid, domain_names)
     test_grid_data(grid, new_grid)
+
+    # 7 ___ 8 ___ 9              7 ___ 8__13___ 9
+    # |\ c6 |\ c8 |              |\ c6 | c|\ c8 |
+    # |  \  |  \  |              |  \  |10|  \  |
+    # | c5 \| c7 \|              | c5 \|  | c7 \|
+    # 4 ___ 5 ___ 6     --->     11___10__12___ |
+    # |\ c2 |\ c4 |              | c9   \/     6
+    # |  \  |  \  |              4 ___  5 ____/|
+    # | c1 \| c3 \|              |\ c2  | \ c4 |
+    # 1 ___ 2 ___ 3              |  \   |   \  |
+    #                            | c1 \ |  c3 \|
+    #                            1 ____ 2 ____ 3
+    #
+    new_grid = insert_interfaces(grid, Dict(["A" => ("bottom", "topleft"), "B" => ("topright", "topleft")]))
+    @test length(new_grid.nodes) == 13
+    @test length(new_grid.cells) == 10
+    @test length(new_grid.cellsets) == 6
 end
 
 @testset "Inserting interfaces in 3D" begin
@@ -128,10 +145,10 @@ end
     setdiff!(set1, set2, set3)
     setdiff!(set3, set2)
 
-    newgrid = insert_interfaces(grid, ["1", "2", "3"])
-    @test length(getcells(newgrid, "1-2-interface")) == 384
-    @test length(getcells(newgrid, "1-3-interface")) == 192
-    @test length(getcells(newgrid, "2-3-interface")) == 48
+    new_grid = insert_interfaces(grid, ["1", "2", "3"])
+    @test length(getcells(new_grid, "1-2-interface")) == 384
+    @test length(getcells(new_grid, "1-3-interface")) == 192
+    @test length(getcells(new_grid, "2-3-interface")) == 48
 end
 
 @testset "Inserting interfaces in 2D for a mixed grid" begin
