@@ -44,6 +44,12 @@ end
     add!(SubDofHandler(dh, Set{Int}([2])), :c, ip.interface)
     add!(SubDofHandler(dh, Set{Int}([3])), :c, ip.right)
     close!(dh)
+
+    a = zeros(ndofs(dh))
+    apply_analytical!(a, dh, :c, x -> 1, [1])
+    @test sum(a) ≈ getnbasefunctions(cv.left)
+    apply_analytical_to_bulk!(a, dh, :c, x -> 1)
+    @test sum(a) ≈ length(a)
     
     ch = ConstraintHandler(dh)
     add!(ch, Dirichlet(:c, getfacetset(grid, "∂Ωₗ"), (x,t) -> 3.0))

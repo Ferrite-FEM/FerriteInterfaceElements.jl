@@ -144,3 +144,8 @@ function get_side_and_baseindex(ip::Union{InterfaceCellInterpolation,
     end
     throw(ArgumentError("Index $(i) exeeds number of basefunctions."))
 end
+
+function Ferrite.reference_coordinates(ip::InterfaceCellInterpolation)
+    basecoords = Ferrite.reference_coordinates(ip.base)
+    return [basecoords[get_side_and_baseindex(ip, i)[2]] for i in 1:2*length(basecoords)]
+end
