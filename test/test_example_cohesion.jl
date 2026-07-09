@@ -31,14 +31,16 @@ function assemble_test_element_cohesion!(Kₑ::Matrix, cv::InterfaceCellValues, 
     end
 end
 
-@testset "In $(dim)D for order $(order)" for (order, dim, get_grid, get_ip) in (
-        (1, 2, prepare_interface_test_grid_2D, prepare_interface_test_vector_interpolation_2D),
-        (2, 2, prepare_interface_test_grid_2D, prepare_interface_test_vector_interpolation_2D),
-        (1, 3, prepare_interface_test_grid_3D, prepare_interface_test_vector_interpolation_3D),
-        (2, 3, prepare_interface_test_grid_3D, prepare_interface_test_vector_interpolation_3D)
+@testset "In $(dim)D for order (ip=$(iporder), grid=($gridorder))" for (iporder, gridorder, dim, get_grid, get_ip) in (
+        (1, 1, 2, prepare_interface_test_grid_2D, prepare_interface_test_vector_interpolation_2D),
+        (2, 2, 2, prepare_interface_test_grid_2D, prepare_interface_test_vector_interpolation_2D),
+        (2, 1, 2, prepare_interface_test_grid_2D, prepare_interface_test_vector_interpolation_2D),
+        (1, 1, 3, prepare_interface_test_grid_3D, prepare_interface_test_vector_interpolation_3D),
+        (2, 2, 3, prepare_interface_test_grid_3D, prepare_interface_test_vector_interpolation_3D),
+        (2, 1, 3, prepare_interface_test_grid_3D, prepare_interface_test_vector_interpolation_3D)
         )
-    grid = get_grid(order)
-    ip, cv = get_ip(order)
+    grid = get_grid(gridorder)
+    ip, cv = get_ip(iporder, gridorder)
     
     dh = DofHandler(grid)
     add!(SubDofHandler(dh, Set{Int}([1])), :u, ip.left)

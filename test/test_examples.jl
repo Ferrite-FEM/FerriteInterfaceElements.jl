@@ -62,47 +62,47 @@ function prepare_interface_test_grid_3D(order::Integer)
     return grid
 end
 
-function prepare_interface_test_scalar_interpolation_2D(order::Integer)
-    ip = (  left = Lagrange{RefQuadrilateral, order}(),
-            interface = InterfaceCellInterpolation(Lagrange{RefLine, order}()),
-            right = Lagrange{RefQuadrilateral, order}())
+function prepare_interface_test_scalar_interpolation_2D(iporder::Integer, gridorder::Int)
+    ip = (  left = Lagrange{RefQuadrilateral, iporder}(),
+            interface = InterfaceCellInterpolation(Lagrange{RefLine, iporder}()),
+            right = Lagrange{RefQuadrilateral, iporder}())
 
-    cv = (  left = CellValues(QuadratureRule{RefQuadrilateral}(4), ip.left, ip.left),
-            interface = InterfaceCellValues(QuadratureRule{RefLine}(4), ip.interface),
-            right = CellValues(QuadratureRule{RefQuadrilateral}(4), ip.right, ip.right))
+    cv = (  left = CellValues(QuadratureRule{RefQuadrilateral}(4), ip.left, Lagrange{RefQuadrilateral, gridorder}()),
+            interface = InterfaceCellValues(QuadratureRule{RefLine}(4), ip.interface, InterfaceCellInterpolation(Lagrange{RefLine, gridorder}())^2),
+            right = CellValues(QuadratureRule{RefQuadrilateral}(4), ip.right, Lagrange{RefQuadrilateral, gridorder}()))
     return ip, cv
 end
 
-function prepare_interface_test_scalar_interpolation_3D(order::Integer)
-    ip = (  left = Lagrange{RefHexahedron, order}(),
-            interface = InterfaceCellInterpolation(Lagrange{RefQuadrilateral, order}()),
-            right = Lagrange{RefHexahedron, order}())
+function prepare_interface_test_scalar_interpolation_3D(iporder::Integer, gridorder::Int)
+    ip = (  left = Lagrange{RefHexahedron, iporder}(),
+            interface = InterfaceCellInterpolation(Lagrange{RefQuadrilateral, iporder}()),
+            right = Lagrange{RefHexahedron, iporder}())
 
-    cv = (  left = CellValues(QuadratureRule{RefHexahedron}(4), ip.left, ip.left),
-            interface = InterfaceCellValues(QuadratureRule{RefQuadrilateral}(4), ip.interface),
-            right = CellValues(QuadratureRule{RefHexahedron}(4), ip.right, ip.right))
+    cv = (  left = CellValues(QuadratureRule{RefHexahedron}(4), ip.left, Lagrange{RefHexahedron, gridorder}()),
+            interface = InterfaceCellValues(QuadratureRule{RefQuadrilateral}(4), ip.interface, InterfaceCellInterpolation(Lagrange{RefQuadrilateral, gridorder}())^3),
+            right = CellValues(QuadratureRule{RefHexahedron}(4), ip.right, Lagrange{RefHexahedron, gridorder}()))
     return ip, cv
 end
 
-function prepare_interface_test_vector_interpolation_2D(order::Integer)
-    ip = (  left = Lagrange{RefQuadrilateral, order}()^2,
-            interface = InterfaceCellInterpolation(Lagrange{RefLine, order}())^2,
-            right = Lagrange{RefQuadrilateral, order}()^2)
+function prepare_interface_test_vector_interpolation_2D(iporder::Integer, gridorder::Int)
+    ip = (  left = Lagrange{RefQuadrilateral, iporder}()^2,
+            interface = InterfaceCellInterpolation(Lagrange{RefLine, iporder}())^2,
+            right = Lagrange{RefQuadrilateral, iporder}()^2)
 
-    cv = (  left = CellValues(QuadratureRule{RefQuadrilateral}(4), ip.left, ip.left),
-            interface = InterfaceCellValues(QuadratureRule{RefLine}(4), ip.interface),
-            right = CellValues(QuadratureRule{RefQuadrilateral}(4), ip.right, ip.right))
+    cv = (  left = CellValues(QuadratureRule{RefQuadrilateral}(4), ip.left, Lagrange{RefQuadrilateral, gridorder}()^2),
+            interface = InterfaceCellValues(QuadratureRule{RefLine}(4), ip.interface, InterfaceCellInterpolation(Lagrange{RefLine, gridorder}())^2),
+            right = CellValues(QuadratureRule{RefQuadrilateral}(4), ip.right, Lagrange{RefQuadrilateral, gridorder}()^2))
     return ip, cv
 end
 
-function prepare_interface_test_vector_interpolation_3D(order::Integer)
-    ip = (  left = Lagrange{RefHexahedron, order}()^3,
-            interface = InterfaceCellInterpolation(Lagrange{RefQuadrilateral, order}())^3,
-            right = Lagrange{RefHexahedron, order}()^3)
+function prepare_interface_test_vector_interpolation_3D(iporder::Integer, gridorder::Int)
+    ip = (  left = Lagrange{RefHexahedron, iporder}()^3,
+            interface = InterfaceCellInterpolation(Lagrange{RefQuadrilateral, iporder}())^3,
+            right = Lagrange{RefHexahedron, iporder}()^3)
 
-    cv = (  left = CellValues(QuadratureRule{RefHexahedron}(4), ip.left, ip.left),
-            interface = InterfaceCellValues(QuadratureRule{RefQuadrilateral}(4), ip.interface),
-            right = CellValues(QuadratureRule{RefHexahedron}(4), ip.right, ip.right))
+    cv = (  left = CellValues(QuadratureRule{RefHexahedron}(4), ip.left, Lagrange{RefHexahedron, gridorder}()^3),
+            interface = InterfaceCellValues(QuadratureRule{RefQuadrilateral}(4), ip.interface, InterfaceCellInterpolation(Lagrange{RefQuadrilateral, gridorder}())^3),
+            right = CellValues(QuadratureRule{RefHexahedron}(4), ip.right, Lagrange{RefHexahedron, gridorder}()^3))
     return ip, cv
 end
 
