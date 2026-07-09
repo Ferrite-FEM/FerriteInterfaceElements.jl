@@ -1,5 +1,3 @@
-#Ferrite.facedof_interior_indices(::Lagrange{RefLine}) = Tuple{}() # Hot fix -> TODO: remove as soon as its in Ferrite
-
 # The constructors of `InterpolationInfo` require a `VectorizedInterpolation{InterfaceCellInterpolation}`
 # and not an `InterfaceCellInterpolation{VectorizedInterpolation,VectorizedInterpolation}`.
 # To create a `VectorizedInterpolation{InterfaceCellInterpolation}`, `InterfaceCellInterpolation` needs to be a `ScalarInterpolation`.

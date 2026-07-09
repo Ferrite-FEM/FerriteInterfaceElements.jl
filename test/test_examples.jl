@@ -107,6 +107,15 @@ function prepare_interface_test_vector_interpolation_3D(iporder::Integer, gridor
 end
 
 @testset "Example problems" begin
+    @testset "Behavior without interfaces" begin
+        grid = generate_grid(Triangle, (2,2))
+        dh = DofHandler(grid)
+        add!(dh, :u, Lagrange{RefTriangle,1}())
+        close!(dh)
+        a = zeros(ndofs(dh))
+        apply_analytical!(a, dh, :u, x -> 1)
+        @test sum(a) ≈ length(a)
+    end
     @testset "Diffusion" begin
         include("test_example_diffusion.jl")
     end

@@ -32,6 +32,7 @@ makedocs(;
             "reference/cells.md",
             "reference/interpolations.md",
             "reference/cellvalues.md",
+            "reference/misc.md",
         ],
         "devdocs/index.md",
     ],
