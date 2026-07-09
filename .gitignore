@@ -1,0 +1,13 @@
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+*.vtu
+*.vtk
+*.pvtu
+*.pvtk
+*.pvd
+docs/build/
+/Manifest.toml
+
+LocalPreferences.toml
+docs/LocalPreferences.toml
