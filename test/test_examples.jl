@@ -113,7 +113,7 @@ end
         add!(dh, :u, Lagrange{RefTriangle,1}())
         close!(dh)
         a = zeros(ndofs(dh))
-        apply_analytical!(a, dh, :u, x -> 1)
+        apply_analytical_to_bulk!(a, dh, :u, x -> 1)
         @test sum(a) ≈ length(a)
     end
     @testset "Diffusion" begin
