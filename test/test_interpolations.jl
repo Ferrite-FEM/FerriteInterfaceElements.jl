@@ -31,4 +31,6 @@
     @test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :here, 100)
     @test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :there, 100)
     @test_throws ArgumentError FerriteInterfaceElements.get_interface_index(ip, :test, 1)
+
+    @test length(Ferrite.reference_coordinates(ip)) == getnbasefunctions(ip)
 end

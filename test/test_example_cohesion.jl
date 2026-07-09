@@ -47,6 +47,13 @@ end
     add!(SubDofHandler(dh, Set{Int}([2])), :u, ip.interface)
     add!(SubDofHandler(dh, Set{Int}([3])), :u, ip.right)
     close!(dh)
+
+    a = zeros(ndofs(dh))
+    apply_analytical!(a, dh, :u, x -> repeat([1], dim), [1])
+    @test sum(a) ≈ getnbasefunctions(cv.left)
+    apply_analytical_to_bulk!(a, dh, :u, x -> repeat([1], dim))
+    @test sum(a) ≈ length(a)
+
     
     ch = ConstraintHandler(dh)
     if dim == 2
