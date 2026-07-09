@@ -18,7 +18,7 @@
     end
 
     ip = InterfaceCellInterpolation(Lagrange{RefTriangle, 1}())
-    for cv in (InterfaceCellValues(qr, ip), InterfaceCellValues(qr, ip; use_same_cv=false), InterfaceCellValues(qr, ip; include_R=true))
+    for cv in (InterfaceCellValues(qr, ip), InterfaceCellValues(qr, ip; use_same_cv=Val(false)), InterfaceCellValues(qr, ip; include_R=Val(true)))
         @test getnbasefunctions(cv) == 6
         @test Ferrite.getngeobasefunctions(cv) == 6
 
@@ -37,7 +37,6 @@
             @test all(abs.(function_gradient_average(cv, qp, u)) .≤ 1e-14)
             @test all(abs.(function_gradient_jump(cv, qp, u)) .≤ 1e-14)
             @test getdetJdV_average(cv, qp) == (getdetJdV(cv.here, qp) + getdetJdV(cv.there, qp)) / 2
-            precompile(function_value_jump, (typeof(cv), typeof(qp), typeof(u)))
             n = @allocated function_value_jump(cv, qp, u)
             @test n == 0
         end
