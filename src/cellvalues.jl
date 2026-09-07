@@ -111,11 +111,11 @@ Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords)
 
 function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
     n_coords_per_side = length(x) ÷ 2
-    x_here  = @view x[cv.base_indices_here[1:n_coords_per_side]]
+    x_here  = view(x, view(cv.base_indices_here, 1:n_coords_per_side))
     reinit!(cv.here, x_here)
 
     if ! (cv.here === cv.there)
-        x_there = @view x[cv.base_indices_there[1:n_coords_per_side]]
+        x_there = view(x, view(cv.base_indices_there, 1:n_coords_per_side))
         reinit!(cv.there, x_there)
     end
 

@@ -79,3 +79,14 @@
         end
     end
 end
+
+@testset "Interface reinitialization allocations" begin
+    ip = InterfaceCellInterpolation(Lagrange{RefLine, 2}())
+    qr = QuadratureRule{RefLine}(2)
+    x = Vec{2,Float64}.([(-1, 0), (1, 0), (-1, 0), (1, 0), (0, 0), (0, 0)])
+    for shared in (true, false)
+        cv = InterfaceCellValues(qr, ip; use_same_cv=shared)
+        reinit!(cv, x)
+        @test (@allocated reinit!(cv, x)) == 0
+    end
+end
