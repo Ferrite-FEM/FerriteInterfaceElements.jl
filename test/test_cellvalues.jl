@@ -156,3 +156,36 @@ end
         @test getdetJdV(cv.there, 1) ≈ 6.0
     end
 end
+
+function test_side_evaluation(cv, x)
+    reinit!(cv, x)
+    n = getnbasefunctions(cv)
+    u = sin.(collect(1:n))
+    for (f, shape) in ((function_value, shape_value), (function_gradient, shape_gradient)), here in (true, false)
+        for qp in 1:getnquadpoints(cv)
+            expected = sum(shape(cv, qp, i, here) * u[i] for i in 1:n)
+            @test f(cv, qp, u, here) ≈ expected
+            @test f(cv, qp, vcat(99.0, u, 99.0), here, 2:n+1) ≈ expected
+            @test f(cv, qp, reverse(u), here, collect(n:-1:1)) ≈ expected
+        end
+        @test_throws ErrorException f(cv, 0, u, here)
+        @test_throws ErrorException f(cv, getnquadpoints(cv)+1, u, here)
+        @test_throws BoundsError f(cv, 1, u, here, 2:n+1)
+        f(cv, 1, u, here)
+        @test (@allocated f(cv, 1, u, here)) == 0
+    end
+end
+
+@testset "Delegated interface field evaluation" begin
+    for (shape, dim) in ((RefLine, 2), (RefTriangle, 3), (RefQuadrilateral, 3))
+        gip = InterfaceCellInterpolation(Lagrange{shape,1}())
+        xh = [Vec{dim}(i -> i < dim ? ξ[i] : 0.0) for ξ in Ferrite.reference_coordinates(gip.base)]
+        xt = [2x + Vec{dim}(i -> i == dim ? 1.0 : 0.0) for x in xh]
+        for order in (1, 2), vdim in (1, dim), shared in (false, true)
+            ip = InterfaceCellInterpolation(Lagrange{shape,order}())
+            cv = InterfaceCellValues(QuadratureRule{shape}(2), vdim == 1 ? ip : ip^vdim, gip;
+                                     use_same_cv=shared)
+            test_side_evaluation(cv, vcat(xh, xt))
+        end
+    end
+end

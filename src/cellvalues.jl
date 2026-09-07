@@ -28,11 +28,11 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
     sides_and_baseindices::NTuple{N,Tuple{Symbol,Int}}
     R::TR # Union{AbstractVector,Nothing} Rotation matrix in quadrature points
 
-    function InterfaceCellValues(ip::IP, here::CV; use_same_cv::Val, include_R::Val) where {IP<:InterfaceCellInterpolation, CV<:CellValues}
+    function InterfaceCellValues(ip::IP, here::CV; use_same_cv::Val, include_R::Val) where {IP<:Union{InterfaceCellInterpolation,VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}}, CV<:CellValues}
         N = getnbasefunctions(ip)
         sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
-        base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
-        base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
+        base_indices_here  = [i for i in 1:N if sides_and_baseindices[i][1] == :here]
+        base_indices_there = [i for i in 1:N if sides_and_baseindices[i][1] == :there]
         ip_geo = InterfaceCellInterpolation(geometric_interpolation(here))
         geo_indices_here = [get_interface_index(ip_geo, :here, i) for i in 1:getngeobasefunctions(here)]
         geo_indices_there = [get_interface_index(ip_geo, :there, i) for i in 1:getngeobasefunctions(here)]
@@ -45,24 +45,7 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
         end
         return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, geo_indices_here, geo_indices_there, sides_and_baseindices, R)
     end
-    function InterfaceCellValues(ip::IP, here::CV; use_same_cv::Val, include_R::Val) where {IP<:VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, CV<:CellValues}
-        N = getnbasefunctions(ip)
-        sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
-        ip = ip.ip
-        base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
-        base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
-        ip_geo = InterfaceCellInterpolation(geometric_interpolation(here))
-        geo_indices_here = [get_interface_index(ip_geo, :here, i) for i in 1:getngeobasefunctions(here)]
-        geo_indices_there = [get_interface_index(ip_geo, :there, i) for i in 1:getngeobasefunctions(here)]
-        there = use_same_cv === Val(true) ? here : copy(here)
-        R = if include_R === Val(false)
-            nothing
-        else
-            T = eltype(here.detJdV)
-            Vector{Tensor{2, Ferrite.getrefdim(ip), T}}(undef, getnquadpoints(here))
-        end
-        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, geo_indices_here, geo_indices_there, sides_and_baseindices, R)
-    end
+
 end
 
 InterfaceCellValues(qr::QuadratureRule, args...; kwargs...) = InterfaceCellValues(Float64, qr, args...; kwargs...)
@@ -248,6 +231,14 @@ function Ferrite.shape_gradient_jump(cv::InterfaceCellValues, qp::Int, i::Int)
     return side == :here ? -shape_gradient(cv.here, qp, baseindex) : shape_gradient(cv.there, qp, baseindex)
 end
 
+function _side_dof_range(cv::InterfaceCellValues, u::AbstractVector, here::Bool, dof_range)
+    nbf = getnbasefunctions(cv)
+    length(dof_range) == nbf || throw(ArgumentError("Expected $nbf DOFs, got $(length(dof_range))."))
+    @boundscheck checkbounds(u, dof_range)
+    indices = here ? cv.base_indices_here : cv.base_indices_there
+    return view(dof_range, indices)
+end
+
 """
     function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool)
 
@@ -256,15 +247,8 @@ where `true` means "here" and `false` means "there".
 `u` is a vector with values for the degrees of freedom.
 """
 function Ferrite.function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool, dof_range = eachindex(u))
-    nbf = getnbasefunctions(cv)
-    length(dof_range) == nbf || throw(ArgumentError("Expected $nbf DOFs, got $(length(dof_range))."))
-    @boundscheck checkbounds(u, dof_range)
-    @boundscheck checkquadpoint(cv, qp)
-    val = function_value_init(cv, u)
-    @inbounds for (i, j) in pairs(dof_range)
-        val += shape_value(cv, qp, i, here) * u[j]
-    end
-    return val
+    side_range = _side_dof_range(cv, u, here, dof_range)
+    return function_value(here ? cv.here : cv.there, qp, u, side_range)
 end
 
 """
@@ -275,15 +259,8 @@ where `true` means "here" and `false` means "there".
 `u` is a vector with values for the degrees of freedom.
 """
 function Ferrite.function_gradient(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool, dof_range = eachindex(u))
-    nbf = getnbasefunctions(cv)
-    length(dof_range) == nbf || throw(ArgumentError("Expected $nbf DOFs, got $(length(dof_range))."))
-    @boundscheck checkbounds(u, dof_range)
-    @boundscheck checkquadpoint(cv, qp)
-    grad = function_gradient_init(cv, u)
-    @inbounds for (i, j) in pairs(dof_range)
-        grad += shape_gradient(cv, qp, i, here) * u[j]
-    end
-    return grad
+    side_range = _side_dof_range(cv, u, here, dof_range)
+    return function_gradient(here ? cv.here : cv.there, qp, u, side_range)
 end
 
 """
