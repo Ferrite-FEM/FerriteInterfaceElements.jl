@@ -34,20 +34,21 @@ function _insert_interfaces(grid::Grid, interfaces::Vector{Tuple{T,String,String
     interfacesets = _prepare_interfacesets(interfaces)
     node_mapping = Dict(name => Dict{Int, Int}() for name in keys(cellsets))
 
-    nodes = copy(grid.nodes)
-    cells_generic = Vector{Ferrite.AbstractCell}(grid.cells) # copies
+    nodes = copy(getnodes(grid))
+    cells_generic = Vector{Ferrite.AbstractCell}(getcells(grid)) # copies
 
     for (name, domain_h, domain_t) in interfaces
         cellset_h  = cellsets[domain_h]
         cellset_t = cellsets[domain_t]
         for cellid_h in cellset_h
             cell_h = getcells(grid, cellid_h)
-            for facetid_h in 1:length(facets(cell_h))
+            for facetid_h in 1:nfacets(cell_h)
                 facet_neighbors = getneighborhood(topology, grid, FacetIndex(cellid_h, facetid_h))
                 isempty(facet_neighbors) && continue
                 (cellid_t, facetid_t) = only(facet_neighbors) # should only ever be one neighboring face
                 if cellid_t in cellset_t # relevant interface detected
-                    facetnodeids = Ferrite.facets(cell_h)[facetid_h] # original nodeids
+                    facetdofs = Ferrite.facetdof_indices(geometric_interpolation(cell_h))[facetid_h]
+                    facetnodeids = map(i -> Ferrite.get_node_ids(cell_h)[i], facetdofs)
                     for nodeid in facetnodeids
                         new_nodeid_h = get(node_mapping[domain_h], nodeid, nothing)
                         new_nodeid_t = get(node_mapping[domain_t], nodeid, nothing)
@@ -91,14 +92,15 @@ function _insert_interfaces(grid::Grid, interfaces::Vector{Tuple{T,String,String
         cellset = getcellset(grid, domain)
         for cellid in cellset
             cell = getcells(grid, cellid)
-            cells[cellid] = typeof(cell)(map(n -> get(node_mapping[domain], n, n), cell.nodes))
+            cells[cellid] = typeof(cell)(map(n -> get(node_mapping[domain], n, n), Ferrite.get_node_ids(cell)))
         end
     end
 
-    new_cellsets = merge(grid.cellsets, Dict("interfaces" => OrderedSet((length(grid.cells)+1):length(cells))), interfacesets)
+    new_cellsets = merge(Ferrite.getcellsets(grid), Dict("interfaces" => OrderedSet((getncells(grid)+1):length(cells))), interfacesets)
     # nodesets might no longer be valid
     new_nodesets = Dict{String, OrderedSet{Int}}()
-    new_grid = Grid(cells, nodes, new_cellsets, new_nodesets, grid.facetsets, grid.vertexsets)
+    new_grid = Grid(cells, nodes; cellsets=new_cellsets, nodesets=new_nodesets,
+                    facetsets=Ferrite.getfacetsets(grid), vertexsets=Ferrite.getvertexsets(grid))
     return new_grid
 end
 

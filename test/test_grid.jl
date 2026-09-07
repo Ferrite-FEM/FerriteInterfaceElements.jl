@@ -197,3 +197,26 @@ end
     @test length(new_grid.cells) == 7
     @test length(new_grid.nodes) == 21
 end
+@testset "Quadratic interface insertion" begin
+    for C in (QuadraticTriangle, QuadraticQuadrilateral)
+        grid = generate_grid(C, (2, 1))
+        addcellset!(grid, "left", x -> x[1] <= 0)
+        addcellset!(grid, "right", x -> x[1] >= 0)
+        new_grid = insert_interfaces(grid, ["left", "right"])
+        interface = only(getcells(new_grid, "interfaces"))
+        @test interface.here isa QuadraticLine
+        @test getnnodes(new_grid) == getnnodes(grid) + 3
+        left_nodes = Set(Iterators.flatten(Ferrite.get_node_ids(c) for c in getcells(new_grid, "left")))
+        right_nodes = Set(Iterators.flatten(Ferrite.get_node_ids(c) for c in getcells(new_grid, "right")))
+        @test isdisjoint(left_nodes, right_nodes)
+        @test all(in(left_nodes), Ferrite.get_node_ids(interface.here))
+        @test all(in(right_nodes), Ferrite.get_node_ids(interface.there))
+        x = getcoordinates(new_grid, only(getcellset(new_grid, "interfaces")))
+        @test x[1:2] == x[3:4]
+        @test x[5] == x[6] == (x[1] + x[2]) / 2
+        ip = InterfaceCellInterpolation(Lagrange{RefLine, 2}())
+        cv = InterfaceCellValues(QuadratureRule{RefLine}(2), ip; use_same_cv=false)
+        reinit!(cv, x)
+        @test sum(getdetJdV_average(cv, qp) for qp in 1:getnquadpoints(cv)) ≈ 2.0
+    end
+end
