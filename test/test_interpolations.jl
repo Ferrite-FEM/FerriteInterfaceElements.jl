@@ -34,3 +34,22 @@
 
     @test length(Ferrite.reference_coordinates(ip)) == getnbasefunctions(ip)
 end
+
+@testset "Higher-order interface DOF numbering" begin
+    for base in (Lagrange{RefTriangle,3}(), Lagrange{RefTriangle,4}(), Lagrange{RefQuadrilateral,3}())
+        ip = InterfaceCellInterpolation(base)
+        vertices = collect(Iterators.flatten(Ferrite.vertexdof_indices(ip)))
+        edges = collect(Iterators.flatten(Ferrite.edgedof_interior_indices(ip)))
+        faces = collect(Iterators.flatten(Ferrite.facedof_interior_indices(ip)))
+        @test vcat(vertices, edges, faces) == collect(1:getnbasefunctions(ip))
+        for entitydofs in (Ferrite.edgedof_interior_indices, Ferrite.facedof_interior_indices)
+            base_entities = entitydofs(base)
+            interface_entities = entitydofs(ip)
+            n = length(base_entities)
+            for j in 1:n
+                @test get_side_and_baseindex.(Ref(ip), interface_entities[j]) == map(i -> (:here, i), base_entities[j])
+                @test get_side_and_baseindex.(Ref(ip), interface_entities[n+j]) == map(i -> (:there, i), base_entities[j])
+            end
+        end
+    end
+end

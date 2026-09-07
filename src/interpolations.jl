@@ -42,7 +42,7 @@ function Ferrite.edgedof_interior_indices(ip::InterfaceCellInterpolation{<:Abstr
     basedofs = Ferrite.edgedof_interior_indices(ip.base)
     offset = _nvertexdofs(ip.base)
     here  = map(v -> map(d -> d + offset, v), basedofs)
-    offset += length(basedofs)
+    offset += _ndofs(basedofs)
     there = map(v -> map(d -> d + offset, v), basedofs)
     return (here..., there...)
 end
@@ -55,7 +55,7 @@ function Ferrite.facedof_interior_indices(ip::InterfaceCellInterpolation{<:Abstr
     end
     offset = _nvertexdofs(ip.base) + _nedgedofs(ip.base)
     here  = map(dofs -> map(d -> d + offset, dofs), basedofs)
-    offset += length(basedofs)
+    offset += _ndofs(basedofs)
     there = map(dofs -> map(d -> d + offset, dofs), basedofs)
     return (here..., there...)
 end
