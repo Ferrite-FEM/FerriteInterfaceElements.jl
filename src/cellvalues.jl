@@ -36,7 +36,7 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
         ip_geo = InterfaceCellInterpolation(geometric_interpolation(here))
         geo_indices_here = [get_interface_index(ip_geo, :here, i) for i in 1:getngeobasefunctions(here)]
         geo_indices_there = [get_interface_index(ip_geo, :there, i) for i in 1:getngeobasefunctions(here)]
-        there = use_same_cv === Val(true) ? here : deepcopy(here)
+        there = use_same_cv === Val(true) ? here : copy(here)
         R = if include_R === Val(false)
             nothing
         else
@@ -54,7 +54,7 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
         ip_geo = InterfaceCellInterpolation(geometric_interpolation(here))
         geo_indices_here = [get_interface_index(ip_geo, :here, i) for i in 1:getngeobasefunctions(here)]
         geo_indices_there = [get_interface_index(ip_geo, :there, i) for i in 1:getngeobasefunctions(here)]
-        there = use_same_cv === Val(true) ? here : deepcopy(here)
+        there = use_same_cv === Val(true) ? here : copy(here)
         R = if include_R === Val(false)
             nothing
         else

@@ -136,3 +136,23 @@ end
         @test_throws ArgumentError f(cv, 1, ones(8), here, 2:4)
     end
 end
+
+@testset "Independent side cell values" begin
+    ip = InterfaceCellInterpolation(Lagrange{RefLine, 1}())
+    qr = QuadratureRule{RefLine}(2)
+    for fip in (ip, ip^2)
+        cv = InterfaceCellValues(qr, fip; use_same_cv=false)
+        x = Vec{2,Float64}.([(-1, 0), (1, 0), (-2, 1), (2, 1)])
+        reinit!(cv, x)
+        @test cv.here !== cv.there
+        for qp in 1:getnquadpoints(cv)
+            @test getdetJdV(cv.there, qp) ≈ 2getdetJdV(cv.here, qp)
+            for i in 1:getnbasefunctions(cv.here)
+                @test shape_gradient(cv.here, qp, i) ≈ 2shape_gradient(cv.there, qp, i)
+            end
+        end
+        reinit!(cv.there, 3x[3:4])
+        @test getdetJdV(cv.here, 1) ≈ 1.0
+        @test getdetJdV(cv.there, 1) ≈ 6.0
+    end
+end
