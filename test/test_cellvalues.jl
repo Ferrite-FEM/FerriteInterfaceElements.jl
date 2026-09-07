@@ -9,6 +9,11 @@
         #@inferred InterfaceCellValues(qr, fip^3, gip^3)
         #@inferred InterfaceCellValues(qr, fip^3, gip)
         @inferred InterfaceCellValues(qr, fip, gip)
+        for func_ip in (fip, fip^3)
+            cv = InterfaceCellValues(qr, func_ip, gip)
+            @test Ferrite.getngeobasefunctions(cv) == getnbasefunctions(gip)
+            @test geometric_interpolation(cv.here) == gip.base
+        end
         @inferred InterfaceCellValues(Float32, qr, fip)
         @inferred InterfaceCellValues(qr, fip)
         @inferred InterfaceCellValues(qr, fip; use_same_cv=Val(false))

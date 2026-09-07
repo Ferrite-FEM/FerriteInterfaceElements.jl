@@ -78,12 +78,12 @@ end
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
             ip::InterfaceCellInterpolation, 
             ip_geo::InterfaceCellInterpolation{shape}; kwargs...) where {T, dim, shape <: AbstractRefShape{dim}}
-    return InterfaceCellValues(T, qr, ip, VectorizedInterpolation{dim}(ip); kwargs...)
+    return InterfaceCellValues(T, qr, ip, VectorizedInterpolation{dim}(ip_geo); kwargs...)
 end
 function InterfaceCellValues(::Type{T}, qr::QuadratureRule, 
             ip::VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, 
             ip_geo::InterfaceCellInterpolation{shape}; kwargs...) where {T, dim, shape <: AbstractRefShape{dim}}
-    return InterfaceCellValues(T, qr, ip, VectorizedInterpolation{dim}(ip.ip); kwargs...)
+    return InterfaceCellValues(T, qr, ip, VectorizedInterpolation{dim}(ip_geo); kwargs...)
 end
 
 function Ferrite.default_geometric_interpolation(::Type{InterfaceCell{shape, C, N}}) where {shape<:AbstractRefShape, C, N} 
