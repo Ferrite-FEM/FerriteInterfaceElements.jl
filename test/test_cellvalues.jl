@@ -90,3 +90,39 @@ end
         @test (@allocated reinit!(cv, x)) == 0
     end
 end
+
+@testset "Mixed solution and geometry orders" begin
+    for (shape, cells, dim) in ((RefLine, (Line, QuadraticLine), 2),
+                               (RefTriangle, (Triangle, QuadraticTriangle), 3),
+                               (RefQuadrilateral, (Quadrilateral, QuadraticQuadrilateral), 3))
+        for forder in (1, 2), gorder in (1, 2), vectorized in (false, true), shared in (false, true)
+            base_fip = Lagrange{shape,forder}()
+            base_gip = Lagrange{shape,gorder}()
+            fip = InterfaceCellInterpolation(base_fip)
+            gip = InterfaceCellInterpolation(base_gip)
+            qr = QuadratureRule{shape}(2)
+            cv = InterfaceCellValues(qr, vectorized ? fip^dim : fip, gip;
+                                     use_same_cv=shared, include_R=true)
+            xh = [Vec{dim}(i -> i < dim ? ξ[i] : 0.0) for ξ in Ferrite.reference_coordinates(base_gip)]
+            xt = [2x + Vec{dim}(i -> i == dim ? 1.0 : 0.0) for x in xh]
+            n = length(xh)
+            C = cells[gorder]
+            cell = InterfaceCell(C(Tuple(1:n)), C(Tuple(n+1:2n)))
+            x = vcat(xh, xt)[collect(cell.nodes)]
+            reinit!(cv, x)
+            for (actual, coords) in ((cv.here, xh), (cv.there, shared ? xh : xt))
+                expected = CellValues(qr, vectorized ? base_fip^dim : base_fip, base_gip^dim)
+                reinit!(expected, coords)
+                for qp in 1:getnquadpoints(cv)
+                    @test getdetJdV(actual, qp) ≈ getdetJdV(expected, qp)
+                    @test midplane_rotation(cv, qp) ≈ one(Tensor{2,dim,Float64})
+                    for i in 1:getnbasefunctions(actual)
+                        @test shape_gradient(actual, qp, i) ≈ shape_gradient(expected, qp, i)
+                    end
+                end
+            end
+            @test_throws ArgumentError reinit!(cv, x[1:end-1])
+            @test_throws ArgumentError reinit!(cv, vcat(x, x[1:1]))
+        end
+    end
+end

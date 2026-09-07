@@ -13,6 +13,8 @@ To do so, set `include_R=true`.
 - `there::CellValues`:  values for facet "there"
 - `base_indices_here::Vector{Int}`: base function indices on facet "here"
 - `base_indices_there::Vector{Int}`: base function indices on facet "there"
+- `geo_indices_here::Vector{Int}`: coordinate indices on facet "here"
+- `geo_indices_there::Vector{Int}`: coordinate indices on facet "there"
 - `sides_and_baseindices::Tuple`: side and base function for the base `CellValues` for each base function of the `InterfaceCellValues`
 - `R::Union{AbstractVector,Nothing}`: rotation matrix of the midplane in the quadrature points
 """
@@ -21,6 +23,8 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
     there::CV
     base_indices_here::Vector{Int}
     base_indices_there::Vector{Int}
+    geo_indices_here::Vector{Int}
+    geo_indices_there::Vector{Int}
     sides_and_baseindices::NTuple{N,Tuple{Symbol,Int}}
     R::TR # Union{AbstractVector,Nothing} Rotation matrix in quadrature points
 
@@ -29,6 +33,9 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
         sides_and_baseindices = Tuple( get_side_and_baseindex(ip, i) for i in 1:N )
         base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
         base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
+        ip_geo = InterfaceCellInterpolation(geometric_interpolation(here))
+        geo_indices_here = [get_interface_index(ip_geo, :here, i) for i in 1:getngeobasefunctions(here)]
+        geo_indices_there = [get_interface_index(ip_geo, :there, i) for i in 1:getngeobasefunctions(here)]
         there = use_same_cv === Val(true) ? here : deepcopy(here)
         R = if include_R === Val(false)
             nothing
@@ -36,7 +43,7 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
             T = eltype(here.detJdV)
             Vector{Tensor{2, Ferrite.getrefdim(ip), T}}(undef, getnquadpoints(here))
         end
-        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
+        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, geo_indices_here, geo_indices_there, sides_and_baseindices, R)
     end
     function InterfaceCellValues(ip::IP, here::CV; use_same_cv::Val, include_R::Val) where {IP<:VectorizedInterpolation{<:Any,<:Any,<:Any,<:InterfaceCellInterpolation}, CV<:CellValues}
         N = getnbasefunctions(ip)
@@ -44,6 +51,9 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
         ip = ip.ip
         base_indices_here  = collect( get_interface_index(ip, :here,  i) for i in 1:getnbasefunctions(ip.base) )
         base_indices_there = collect( get_interface_index(ip, :there, i) for i in 1:getnbasefunctions(ip.base) )
+        ip_geo = InterfaceCellInterpolation(geometric_interpolation(here))
+        geo_indices_here = [get_interface_index(ip_geo, :here, i) for i in 1:getngeobasefunctions(here)]
+        geo_indices_there = [get_interface_index(ip_geo, :there, i) for i in 1:getngeobasefunctions(here)]
         there = use_same_cv === Val(true) ? here : deepcopy(here)
         R = if include_R === Val(false)
             nothing
@@ -51,7 +61,7 @@ struct InterfaceCellValues{CV,TR,N} <: AbstractCellValues
             T = eltype(here.detJdV)
             Vector{Tensor{2, Ferrite.getrefdim(ip), T}}(undef, getnquadpoints(here))
         end
-        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, sides_and_baseindices, R)
+        return new{CV,typeof(R),N}(here, there, base_indices_here, base_indices_there, geo_indices_here, geo_indices_there, sides_and_baseindices, R)
     end
 end
 
@@ -110,17 +120,18 @@ Ferrite.shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.he
 Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords)
 
 function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
-    n_coords_per_side = length(x) ÷ 2
-    x_here  = view(x, view(cv.base_indices_here, 1:n_coords_per_side))
+    ncoords = getngeobasefunctions(cv)
+    length(x) == ncoords || throw(ArgumentError("Expected $ncoords coordinates, got $(length(x))."))
+    x_here = view(x, cv.geo_indices_here)
     reinit!(cv.here, x_here)
 
     if ! (cv.here === cv.there)
-        x_there = view(x, view(cv.base_indices_there, 1:n_coords_per_side))
+        x_there = view(x, cv.geo_indices_there)
         reinit!(cv.there, x_there)
     end
 
     if cv.R !== nothing
-        x_there = @view x[cv.base_indices_there]
+        x_there = view(x, cv.geo_indices_there)
         for qp in 1:getnquadpoints(cv.here)
             mapping_here  = Ferrite.calculate_mapping(cv.here.geo_mapping,  qp, x_here)
             mapping_there = Ferrite.calculate_mapping(cv.there.geo_mapping, qp, x_there)
