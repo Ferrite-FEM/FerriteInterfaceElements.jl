@@ -107,7 +107,7 @@ function get_nodal_temperatures(u::AbstractVector, dh::DofHandler)
     bulkcells = union( getcellset(grid, "inclusions"), getcellset(grid, "matrix") )
     uₙ = zeros(length(grid.nodes))
     for cc in CellIterator(dh, bulkcells)
-        cell = getcells(grid, cc.cellid)
+        cell = getcells(grid, cellid(cc))
         dofs = celldofs(cc)
         nodes = [cell.nodes...]
         uₙ[nodes] .= u[dofs]
