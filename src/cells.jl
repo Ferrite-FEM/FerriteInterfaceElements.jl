@@ -21,7 +21,7 @@ struct InterfaceCell{shape, C, N} <: AbstractCell{shape}
 
     function InterfaceCell{shape, C}(here::C, there::C) where {shape<:AbstractRefShape, C<:AbstractCell}
         sni = get_sides_and_base_indices(C)
-        nodes = ntuple( i -> sni[i][1] == :here ? here.nodes[sni[i][2]] : there.nodes[sni[i][2]], length(sni))
+        nodes = ntuple( i -> sni[i][1] == :here ? Ferrite.get_node_ids(here)[sni[i][2]] : Ferrite.get_node_ids(there)[sni[i][2]], length(sni))
         new{shape, C, length(nodes)}(here, there, nodes)
     end
 end

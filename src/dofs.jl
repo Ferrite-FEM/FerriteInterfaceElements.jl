@@ -13,6 +13,6 @@ function apply_analytical_to_bulk!(a::AbstractVector, dh::DofHandler{dim,<:Grid{
         return Ferrite.apply_analytical!(a, dh, fieldname, f, cellset)
     end
     cellset = OrderedSet{Int}(cellset)
-    filter!(i -> ! (dh.grid.cells[i] isa InterfaceCell), cellset)
+    filter!(i -> ! (getcells(get_grid(dh), i) isa InterfaceCell), cellset)
     return Ferrite.apply_analytical!(a, dh, fieldname, f, cellset)
 end

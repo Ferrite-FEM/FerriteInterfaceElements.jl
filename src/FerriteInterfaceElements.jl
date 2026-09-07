@@ -12,7 +12,7 @@ import Ferrite: AbstractCell, AbstractRefShape, AbstractCellValues,
     adjust_dofs_during_distribution, default_geometric_interpolation, geometric_interpolation,
     shape_value_type, shape_gradient_type,
     reinit!, getnquadpoints, getdetJdV, shape_value, shape_gradient, function_value, function_gradient,
-    getcellset, getcells, getneighborhood, get_grid, getncells,
+    getcellset, getcells, getnodes, getcoordinates, nfacets, getneighborhood, get_grid, getncells,
     ×, norm
 import OrderedCollections: OrderedSet
 import VTKBase: VTKCellTypes

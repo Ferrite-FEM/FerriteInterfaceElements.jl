@@ -100,7 +100,7 @@ Ferrite.shape_value_type(cv::InterfaceCellValues) = shape_value_type(cv.here)
 
 Ferrite.shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.here)
 
-Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords)
+Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, getcoordinates(cc))
 
 function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
     ncoords = getngeobasefunctions(cv)
