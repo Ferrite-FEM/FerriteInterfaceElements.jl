@@ -47,7 +47,8 @@ function _insert_interfaces(grid::Grid, interfaces::Vector{Tuple{T,String,String
                 isempty(facet_neighbors) && continue
                 (cellid_t, facetid_t) = only(facet_neighbors) # should only ever be one neighboring face
                 if cellid_t in cellset_t # relevant interface detected
-                    facetnodeids = Ferrite.facets(cell_h)[facetid_h] # original nodeids
+                    facetdofs = Ferrite.facetdof_indices(geometric_interpolation(cell_h))[facetid_h]
+                    facetnodeids = map(i -> Ferrite.get_node_ids(cell_h)[i], facetdofs)
                     for nodeid in facetnodeids
                         new_nodeid_h = get(node_mapping[domain_h], nodeid, nothing)
                         new_nodeid_t = get(node_mapping[domain_t], nodeid, nothing)
