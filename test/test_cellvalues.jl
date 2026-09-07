@@ -126,3 +126,13 @@ end
         end
     end
 end
+
+@testset "Invalid interface solution lengths" begin
+    ip = InterfaceCellInterpolation(Lagrange{RefLine, 1}())
+    cv = InterfaceCellValues(QuadratureRule{RefLine}(2), ip)
+    for f in (function_value, function_gradient), here in (true, false)
+        @test_throws ArgumentError f(cv, 1, ones(3), here)
+        @test_throws ArgumentError f(cv, 1, ones(5), here)
+        @test_throws ArgumentError f(cv, 1, ones(8), here, 2:4)
+    end
+end

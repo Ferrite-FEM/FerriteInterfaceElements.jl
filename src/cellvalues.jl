@@ -257,7 +257,7 @@ where `true` means "here" and `false` means "there".
 """
 function Ferrite.function_value(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool, dof_range = eachindex(u))
     nbf = getnbasefunctions(cv)
-    length(dof_range) == nbf || throw_incompatible_dof_length(length(dof_range), nbf)
+    length(dof_range) == nbf || throw(ArgumentError("Expected $nbf DOFs, got $(length(dof_range))."))
     @boundscheck checkbounds(u, dof_range)
     @boundscheck checkquadpoint(cv, qp)
     val = function_value_init(cv, u)
@@ -276,7 +276,7 @@ where `true` means "here" and `false` means "there".
 """
 function Ferrite.function_gradient(cv::InterfaceCellValues, qp::Int, u::AbstractVector, here::Bool, dof_range = eachindex(u))
     nbf = getnbasefunctions(cv)
-    length(dof_range) == nbf || throw_incompatible_dof_length(length(dof_range), nbf)
+    length(dof_range) == nbf || throw(ArgumentError("Expected $nbf DOFs, got $(length(dof_range))."))
     @boundscheck checkbounds(u, dof_range)
     @boundscheck checkquadpoint(cv, qp)
     grad = function_gradient_init(cv, u)
