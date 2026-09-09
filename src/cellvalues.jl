@@ -132,6 +132,13 @@ function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim
     end
     return nothing
 end
+
+function Ferrite.reinit!(cv::InterfaceCellValues,
+                         ::Union{Ferrite.AbstractCell, Nothing},
+                         x::AbstractVector{Vec{sdim,T}}) where {sdim, T}
+    return reinit!(cv, x)
+end
+
 function _get_R_from_J(J::MixedTensor2{2,1,T}) where T 
     v1 = J[:, 1]
     v2 = Vec{2,T}((-v1[2], v1[1]))
