@@ -120,7 +120,7 @@ function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim
     end
 
     if cv.R !== nothing
-        x_there = @view x[cv.base_indices_there]
+        x_there = @view x[cv.base_indices_there[1:n_coords_per_side]]
         for qp in 1:getnquadpoints(cv.here)
             mapping_here  = Ferrite.calculate_mapping(cv.here.geo_mapping,  qp, x_here)
             mapping_there = Ferrite.calculate_mapping(cv.there.geo_mapping, qp, x_there)

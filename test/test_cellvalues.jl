@@ -100,3 +100,40 @@ end
         end
     end
 end
+
+@testset "reinit! with superparametric field (ip order 2, geometry order 1)" begin
+    # Quadratic field, linear geometry: base_indices_* (function space, 3 per side)
+    # and the coordinate vector (4 geometric nodes) have different lengths.
+    ip     = InterfaceCellInterpolation(Lagrange{RefLine, 2}())
+    ip_geo = VectorizedInterpolation{2}(InterfaceCellInterpolation(Lagrange{RefLine, 1}()))
+    qr     = QuadratureRule{RefLine}(2)
+
+    p1 = Vec{2}((0.0, 0.0))
+    p2 = Vec{2}((2.0, 1.0))
+    x  = [p1, p2, p1, p2]          # node order: (here,1), (here,2), (there,1), (there,2)
+
+    t = (p2 - p1) / norm(p2 - p1)
+    n = Vec{2}((-t[2], t[1]))
+
+    @testset "include_R = false" begin
+        cv = InterfaceCellValues(Float64, qr, ip, ip_geo; include_R = Val(false))
+        @test length(cv.base_indices_here) == 3
+        @test length(x) == 4
+        reinit!(cv, x)
+        for qp in 1:getnquadpoints(cv.here)
+            @test getdetJdV_average(cv, qp) > 0
+        end
+    end
+
+    @testset "include_R = true" begin
+        cv = InterfaceCellValues(Float64, qr, ip, ip_geo; include_R = Val(true))
+        reinit!(cv, x)
+        for qp in 1:getnquadpoints(cv.here)
+            R = midplane_rotation(cv, qp)
+            @test R⋅Vec{2}((1.0,0.0)) ≈ t
+            @test R⋅Vec{2}((0.0,1.0)) ≈ n
+            @test det(R) ≈ 1.0
+            @test R' ⋅ R ≈ one(Tensor{2, 2})
+        end
+    end
+end
