@@ -107,31 +107,38 @@ Ferrite.shape_value_type(cv::InterfaceCellValues) = shape_value_type(cv.here)
 
 Ferrite.shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.here)
 
-Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, cc.coords)
+@inline function Ferrite.reinit_needs_cell(cv::InterfaceCellValues)
+    return Ferrite.reinit_needs_cell(cv.here) || Ferrite.reinit_needs_cell(cv.there)
+end
 
-function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
+Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, getcells(cc.grid, Ferrite.cellid(cc)), cc.coords)
+
+Ferrite.reinit!(cv::InterfaceCellValues, x::AbstractVector{<:Vec}) = reinit!(cv, nothing, x)
+
+function Ferrite.reinit!(cv::InterfaceCellValues{CV}, cell::Union{Ferrite.AbstractCell, Nothing},
+                         x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
     n_coords_per_side = length(x) ÷ 2
-    x_here  = @view x[cv.base_indices_here[1:n_coords_per_side]]
-    reinit!(cv.here, x_here)
+    cell_here, cell_there = cell === nothing ? (nothing, nothing) : (cell.here, cell.there)
 
-    if ! (cv.here === cv.there)
-        x_there = @view x[cv.base_indices_there[1:n_coords_per_side]]
-        reinit!(cv.there, x_there)
+    x_here  = @view x[cv.base_indices_here[1:n_coords_per_side]]
+    x_there = @view x[cv.base_indices_there[1:n_coords_per_side]]
+
+    reinit!(cv.here, cell_here, x_here)
+    if !(cv.here === cv.there)
+        reinit!(cv.there, cell_there, x_there)
     end
 
     if cv.R !== nothing
-        x_there = @view x[cv.base_indices_there]
         for qp in 1:getnquadpoints(cv.here)
             mapping_here  = Ferrite.calculate_mapping(cv.here.geo_mapping,  qp, x_here)
             mapping_there = Ferrite.calculate_mapping(cv.there.geo_mapping, qp, x_there)
-            J_here  = Ferrite.getjacobian(mapping_here)
-            J_there = Ferrite.getjacobian(mapping_there)
-            J = (J_here + J_there) / 2
+            J = (Ferrite.getjacobian(mapping_here) + Ferrite.getjacobian(mapping_there)) / 2
             cv.R[qp] = _get_R_from_J(J)
         end
     end
     return nothing
 end
+
 function _get_R_from_J(J::MixedTensor2{2,1,T}) where T 
     v1 = J[:, 1]
     v2 = Vec{2,T}((-v1[2], v1[1]))
