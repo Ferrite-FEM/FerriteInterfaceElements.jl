@@ -14,6 +14,9 @@ and a new cellset will be provided, which can be accessed using both of the foll
 
 When using `interfaces`, each value of the `Dict` defines a pair of cellsets between which interfaces
 will be inserted and collected in a new cellset which can be accessed by the corresponding key.
+
+Nodes are only duplicated between cells which are separated by an inserted interface. Where three or
+more domains meet in a single node, domains which are not separated by an interface keep sharing the node.
 """
 function insert_interfaces(grid::Grid, interfaces::Dict{String,Tuple{String,String}}; kwargs...)
     interfaces = [(name, domains[1], domains[2]) for (name, domains) in pairs(interfaces)]
@@ -30,57 +33,82 @@ end
 
 
 function _insert_interfaces(grid::Grid, interfaces::Vector{Tuple{T,String,String}}; topology=ExclusiveTopology(grid)) where {T<:Union{String,Tuple{String,String}}}
-    relevant_domains, cellsets = _prepare_cellsets(grid, interfaces)
+    cellsets = _prepare_cellsets(grid, interfaces)
     interfacesets = _prepare_interfacesets(interfaces)
-    node_mapping = Dict(name => Dict{Int, Int}() for name in keys(cellsets))
 
-    nodes = copy(getnodes(grid))
-    cells_generic = Vector{Ferrite.AbstractCell}(getcells(grid)) # copies
-
+    # Collect the facets to be split, in the order in which the interface cells are created
+    interfacefacets = Tuple{T, Tuple{Int, Int}, Tuple{Int, Int}}[] # (name, (cellid, facetid) here, (cellid, facetid) there)
+    splitfacets = Set{Tuple{Int, Int}}()
     for (name, domain_h, domain_t) in interfaces
-        cellset_h  = cellsets[domain_h]
         cellset_t = cellsets[domain_t]
-        for cellid_h in cellset_h
+        for cellid_h in cellsets[domain_h]
             cell_h = getcells(grid, cellid_h)
             for facetid_h in 1:nfacets(cell_h)
                 facet_neighbors = getneighborhood(topology, grid, FacetIndex(cellid_h, facetid_h))
                 isempty(facet_neighbors) && continue
-                (cellid_t, facetid_t) = only(facet_neighbors) # should only ever be one neighboring face
-                if cellid_t in cellset_t # relevant interface detected
-                    facetdofs = Ferrite.facetdof_indices(geometric_interpolation(cell_h))[facetid_h]
-                    facetnodeids = map(i -> Ferrite.get_node_ids(cell_h)[i], facetdofs)
-                    for nodeid in facetnodeids
-                        new_nodeid_h = get(node_mapping[domain_h], nodeid, nothing)
-                        new_nodeid_t = get(node_mapping[domain_t], nodeid, nothing)
-                        # generate missing duplicate nodes
-                        if isnothing(new_nodeid_h) && isnothing(new_nodeid_t)
-                            # decide for main side, genererate new node
-                            node_mapping[domain_h][nodeid] = nodeid # main node
-                            # new node
-                            push!(nodes, nodes[nodeid])
-                            node_mapping[domain_t][nodeid] = length(nodes) # main node
-                        elseif !isnothing(new_nodeid_h) && isnothing(new_nodeid_t)
-                            # node has been duplicated at least once before, so it already has a main
-                            # generate a new node for (_name, _cellset)
-                            push!(nodes, nodes[nodeid])
-                            node_mapping[domain_t][nodeid] = length(nodes) # main node
-                        elseif isnothing(new_nodeid_h) && ! isnothing(new_nodeid_t)
-                            # node has been duplicated at least once, so it already has a main grain
-                            # generate a new node for (name, cellset)
-                            push!(nodes, nodes[nodeid])
-                            node_mapping[domain_h][nodeid] = length(nodes) # main node
-                        end
-                    end
-                    new_nodeids_h = Tuple(node_mapping[domain_h][i] for i in facetnodeids)
-                    new_nodeids_t = Tuple(node_mapping[domain_t][i] for i in facetnodeids)
-                    # generate new cell
-                    cell_t = getcells(grid, cellid_t)
-                    interface_cell = create_interface_cell(typeof(cell_h), typeof(cell_t), new_nodeids_h, new_nodeids_t)
-                    push!(cells_generic, interface_cell)
-                    _add_interfacecell!(interfacesets, length(cells_generic), name)
+                (cellid_t, facetid_t) = only(facet_neighbors) # should only ever be one neighboring facet
+                cellid_t in cellset_t || continue
+                facet_h, facet_t = (cellid_h, facetid_h), (cellid_t, facetid_t)
+                push!(interfacefacets, (name, facet_h, facet_t))
+                push!(splitfacets, facet_h, facet_t)
+            end
+        end
+    end
+
+    # Collect the cells around every node on a split facet
+    node_cells = Dict{Int, Vector{Int}}()
+    for (_, facet_h, _) in interfacefacets
+        for nodeid in _facet_node_ids(grid, facet_h)
+            get!(node_cells, nodeid, Int[])
+        end
+    end
+    for (cellid, cell) in enumerate(getcells(grid))
+        for nodeid in Ferrite.get_node_ids(cell)
+            cells = get(node_cells, nodeid, nothing)
+            isnothing(cells) || push!(cells, cellid)
+        end
+    end
+
+    # Group the cells around each split node into components: two cells belong to the same component
+    # if they are connected through facets which are not split. Each component gets its own copy of
+    # the node. This matters at junctions where three or more domains meet in a single node but
+    # interfaces are only requested between some of them: the domains which are not separated by an
+    # interface must keep sharing the node.
+    node_components = Dict{Int, Dict{Int, Int}}() # nodeid => (cellid => component id)
+    for (nodeid, cellids) in node_cells
+        parent = Dict(cellid => cellid for cellid in cellids)
+        for cellid in cellids
+            cell = getcells(grid, cellid)
+            for facetid in 1:nfacets(cell)
+                (cellid, facetid) in splitfacets && continue
+                nodeid in _facet_node_ids(grid, (cellid, facetid)) || continue
+                for neighbor in getneighborhood(topology, grid, FacetIndex(cellid, facetid))
+                    _union!(parent, cellid, neighbor[1])
                 end
             end
         end
+        node_components[nodeid] = Dict(cellid => _find!(parent, cellid) for cellid in cellids)
+    end
+
+    # Assign node ids to the components: the first component keeps the original node,
+    # every other component gets a duplicate.
+    nodes = copy(getnodes(grid))
+    new_nodeids = Dict{Tuple{Int, Int}, Int}() # (nodeid, component id) => new nodeid
+    kept = Set{Int}() # nodes for which a component keeps the original node id
+    cells_generic = Vector{Ferrite.AbstractCell}(getcells(grid)) # copies
+    for (name, facet_h, facet_t) in interfacefacets
+        cellid_h, cellid_t = facet_h[1], facet_t[1]
+        facetnodeids = _facet_node_ids(grid, facet_h)
+        for nodeid in facetnodeids
+            _assign_nodeid!(new_nodeids, kept, nodes, nodeid, node_components[nodeid][cellid_h])
+            _assign_nodeid!(new_nodeids, kept, nodes, nodeid, node_components[nodeid][cellid_t])
+        end
+        nodeids_h = map(n -> new_nodeids[(n, node_components[n][cellid_h])], facetnodeids)
+        nodeids_t = map(n -> new_nodeids[(n, node_components[n][cellid_t])], facetnodeids)
+        # generate new cell
+        interface_cell = create_interface_cell(typeof(getcells(grid, cellid_h)), typeof(getcells(grid, cellid_t)), nodeids_h, nodeids_t)
+        push!(cells_generic, interface_cell)
+        _add_interfacecell!(interfacesets, length(cells_generic), name)
     end
 
     # better typing of cells vector
@@ -88,12 +116,12 @@ function _insert_interfaces(grid::Grid, interfaces::Vector{Tuple{T,String,String
     cells = convert(Array{cell_type}, cells_generic)
 
     # adjust original cells to new node numbering
-    for domain in relevant_domains
-        cellset = getcellset(grid, domain)
-        for cellid in cellset
-            cell = getcells(grid, cellid)
-            cells[cellid] = typeof(cell)(map(n -> get(node_mapping[domain], n, n), Ferrite.get_node_ids(cell)))
-        end
+    for cellid in Set{Int}(Iterators.flatten(values(node_cells)))
+        cell = getcells(grid, cellid)
+        cells[cellid] = typeof(cell)(map(Ferrite.get_node_ids(cell)) do n
+            components = get(node_components, n, nothing)
+            return isnothing(components) ? n : new_nodeids[(n, components[cellid])]
+        end)
     end
 
     new_cellsets = merge(Ferrite.getcellsets(grid), Dict("interfaces" => OrderedSet((getncells(grid)+1):length(cells))), interfacesets)
@@ -104,13 +132,48 @@ function _insert_interfaces(grid::Grid, interfaces::Vector{Tuple{T,String,String
     return new_grid
 end
 
+# Node ids of a facet, including any non-vertex nodes (e.g. mid nodes of quadratic cells)
+function _facet_node_ids(grid::Grid, (cellid, facetid)::Tuple{Int, Int})
+    cell = getcells(grid, cellid)
+    facetdofs = Ferrite.facetdof_indices(geometric_interpolation(cell))[facetid]
+    return map(i -> Ferrite.get_node_ids(cell)[i], facetdofs)
+end
+
+# Union-find over cell ids
+function _find!(parent::Dict{Int, Int}, i::Int)
+    while parent[i] != i
+        parent[i] = parent[parent[i]]
+        i = parent[i]
+    end
+    return i
+end
+function _union!(parent::Dict{Int, Int}, i::Int, j::Int)
+    ri, rj = _find!(parent, i), _find!(parent, j)
+    ri == rj || (parent[max(ri, rj)] = min(ri, rj))
+    return nothing
+end
+
+# Return the node id for `nodeid` in the given component, creating a duplicate node if needed.
+# The first component that asks for a node keeps the original one.
+function _assign_nodeid!(new_nodeids::Dict{Tuple{Int, Int}, Int}, kept::Set{Int}, nodes::Vector, nodeid::Int, component::Int)
+    return get!(new_nodeids, (nodeid, component)) do
+        if nodeid in kept
+            push!(nodes, nodes[nodeid])
+            return length(nodes)
+        else
+            push!(kept, nodeid)
+            return nodeid
+        end
+    end
+end
+
 function _prepare_cellsets(grid::Grid, interfaces::Vector{Tuple{T,String,String}}) where {T<:Union{String,Tuple{String,String}}}
     relevant_domains = Set{String}()
     for (_, domain_h, domain_t) in interfaces
         push!(relevant_domains, domain_h)
         push!(relevant_domains, domain_t)
     end
-    return relevant_domains, Dict(name => getcellset(grid, name) for name in relevant_domains)
+    return Dict(name => getcellset(grid, name) for name in relevant_domains)
 end
 
 function _prepare_interfacesets(interfaces::Vector{Tuple{String,String,String}})
