@@ -156,7 +156,10 @@ end
     @test getnnodes(new_grid) == getnnodes(grid) + 3
     @test isdisjoint(nodes_in(new_grid, "A"), nodes_in(new_grid, "B"))
     @test isdisjoint(nodes_in(new_grid, "B"), nodes_in(new_grid, "C"))
-    @test shared_nodes(new_grid, 2, 4) == [6, 5]
+    # Which component keeps the original node id depends on the iteration order of the Dict
+    shared = shared_nodes(new_grid, 2, 4)
+    @test length(shared) == 2 && 6 in shared
+    @test nodes_in(new_grid, "A") ∩ nodes_in(new_grid, "C") == Set(shared)
     @test length(getcellset(new_grid, "AB")) == 1
     @test length(getcellset(new_grid, "BC")) == 1
     for cellid in getcellset(new_grid, "interfaces")
