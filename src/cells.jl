@@ -31,6 +31,16 @@ function InterfaceCell(here::C, there::C) where {baseshape<:AbstractRefShape, C<
     return InterfaceCell{shape, C}(here, there)
 end
 
+# Construct from the node tuple (the inverse of `cell.nodes`), as Ferrite does for its own cells
+# with `typeof(cell)(nodes)`, e.g. when writing a discontinuous VTK grid.
+function InterfaceCell{shape, C, N}(nodes::NTuple{N, Int}) where {shape<:AbstractRefShape, C<:AbstractCell, N}
+    sni = get_sides_and_base_indices(C)
+    nbase = length(sni) ÷ 2
+    here  = C(ntuple(i -> nodes[findfirst(==((:here,  i)), sni)], nbase))
+    there = C(ntuple(i -> nodes[findfirst(==((:there, i)), sni)], nbase))
+    return InterfaceCell{shape, C}(here, there)
+end
+
 """
     get_interface_cell_shape(::Type{<:AbstractRefShape})
 
@@ -72,6 +82,11 @@ Ferrite.facets(c::InterfaceCell) = (vertices(c.here), vertices(c.there))
 Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefQuadrilateral, Line, 4}}) = VTKCellTypes.VTK_QUAD
 Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefHexahedron, Quadrilateral, 8}}) = VTKCellTypes.VTK_HEXAHEDRON
 Ferrite.cell_to_vtkcell(cell::Type{InterfaceCell{RefPrism, Triangle, 6}}) = VTKCellTypes.VTK_WEDGE
+
+# The nodes of an `InterfaceCell` are ordered "here" first, then "there". For the wedge and the
+# hexahedron this matches the VTK order (bottom face, then top face), but the VTK quad expects
+# its nodes in cyclic order, so the "there" nodes have to be reversed.
+Ferrite.nodes_to_vtkorder(cell::InterfaceCell{RefQuadrilateral, Line, 4}) = [cell.nodes[1], cell.nodes[2], cell.nodes[4], cell.nodes[3]]
 
 Ferrite.geometric_interpolation(cell::Type{InterfaceCell{RefQuadrilateral, Line, 4}}) = Lagrange{RefQuadrilateral, 1}()
 Ferrite.geometric_interpolation(cell::Type{InterfaceCell{RefHexahedron, Quadrilateral, 8}}) = Lagrange{RefHexahedron, 1}()
