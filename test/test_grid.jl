@@ -104,17 +104,17 @@ end
 
     # Only "topleft" is separated from its neighbors. "bottom" and "topright" are not separated
     # by an interface, so they keep sharing node 5 (the triple junction) and node 6.
-    # 7 ___ 8 ___ 9              7 __ 8'  8 ___ 9
-    # |\ c6 |\ c8 |              |\ c6 | c|\ c8 |
-    # |  \  |  \  |              |  \  | 9|  \  |
-    # | c5 \| c7 \|              | c5 \|  | c7 \|
-    # 4 ___ 5 ___ 6     --->     4'__ 5'  5 ___ 6
-    # |\ c2 |\ c4 |              |  c10   /|\ c4 |
-    # |  \  |  \  |              4 ___ 5   |  \  |
-    # | c1 \| c3 \|              |\ c2  |  | c3 \|
-    # 1 ___ 2 ___ 3              |  \   |  |     |
-    #                            | c1 \ |  |     |
-    #                            1 ____ 2 _3
+    # 7 ___ 8 ___ 9              7 __ 8'_ 8 ____ 9
+    # |\ c6 |\ c8 |              |\ c6 |  |\ c8  |
+    # |  \  |  \  |              |  \  |c9|  \   |
+    # | c5 \| c7 \|              | c5 \|  | c7 \ |
+    # 4 ___ 5 ___ 6     --->     4'__ 5'\ | ____ 6
+    # |\ c2 |\ c4 |              |  c10  \5\ c4  |
+    # |  \  |  \  |              4 _____/ |  \   |
+    # | c1 \| c3 \|              |\ c2    |   \  |
+    # 1 ___ 2 ___ 3              |  \     |    \ |
+    #                            | c1 \   |  c3 \|
+    #                            1 _____\ 2 ____ 3
     #
     new_grid = insert_interfaces(grid, Dict(["A" => ("bottom", "topleft"), "B" => ("topright", "topleft")]))
     @test length(new_grid.nodes) == 12
