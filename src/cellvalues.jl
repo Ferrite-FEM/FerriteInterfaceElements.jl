@@ -100,21 +100,26 @@ Ferrite.shape_value_type(cv::InterfaceCellValues) = shape_value_type(cv.here)
 
 Ferrite.shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.here)
 
-Ferrite.reinit!(cv::InterfaceCellValues, cc::CellCache) = reinit!(cv, getcoordinates(cc))
+@inline function Ferrite.reinit_needs_cell(cv::InterfaceCellValues)
+    return Ferrite.reinit_needs_cell(cv.here) || Ferrite.reinit_needs_cell(cv.there)
+end
 
-function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
+Ferrite.reinit!(cv::InterfaceCellValues, x::AbstractVector{<:Vec}) = reinit!(cv, nothing, x)
+
+function Ferrite.reinit!(cv::InterfaceCellValues{CV}, cell::Union{Nothing, InterfaceCell},
+                         x::AbstractVector{Vec{sdim,T}}) where {sdim, T, CV}
     ncoords = getngeobasefunctions(cv)
     length(x) == ncoords || throw(ArgumentError("Expected $ncoords coordinates, got $(length(x))."))
+    cell_here, cell_there = cell === nothing ? (nothing, nothing) : (cell.here, cell.there)
     x_here = view(x, cv.geo_indices_here)
-    reinit!(cv.here, x_here)
+    x_there = view(x, cv.geo_indices_there)
 
+    reinit!(cv.here, cell_here, x_here)
     if ! (cv.here === cv.there)
-        x_there = view(x, cv.geo_indices_there)
-        reinit!(cv.there, x_there)
+        reinit!(cv.there, cell_there, x_there)
     end
 
     if cv.R !== nothing
-        x_there = view(x, cv.geo_indices_there)
         for qp in 1:getnquadpoints(cv.here)
             mapping_here  = Ferrite.calculate_mapping(cv.here.geo_mapping,  qp, x_here)
             mapping_there = Ferrite.calculate_mapping(cv.there.geo_mapping, qp, x_there)
@@ -126,6 +131,7 @@ function Ferrite.reinit!(cv::InterfaceCellValues{CV}, x::AbstractVector{Vec{sdim
     end
     return nothing
 end
+
 function _get_R_from_J(J::MixedTensor2{2,1,T}) where T 
     v1 = J[:, 1]
     v2 = Vec{2,T}((-v1[2], v1[1]))

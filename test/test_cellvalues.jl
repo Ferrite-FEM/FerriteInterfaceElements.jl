@@ -189,3 +189,53 @@ end
         end
     end
 end
+
+@testset "reinit! with cell argument" begin
+    qr = QuadratureRule{RefTriangle}(1)
+    ip = InterfaceCellInterpolation(Lagrange{RefTriangle, 1}())
+    cell = InterfaceCell(Triangle((1, 2, 3)), Triangle((4, 5, 6)))
+    x = repeat([rand(Vec{3}), rand(Vec{3}), rand(Vec{3})], 2)
+
+    for kwargs in ((), (; include_R = Val(true)), (; use_same_cv = Val(false)))
+        cv_2arg = InterfaceCellValues(qr, ip; kwargs...)
+        cv_3arg = InterfaceCellValues(qr, ip; kwargs...)
+        cv_nothing = InterfaceCellValues(qr, ip; kwargs...)
+
+        reinit!(cv_2arg, x)
+        reinit!(cv_3arg, cell, x)
+        reinit!(cv_nothing, nothing, x)
+
+        for qp in 1:getnquadpoints(cv_2arg)
+            @test getdetJdV_average(cv_3arg, qp)   == getdetJdV_average(cv_2arg, qp)
+            @test getdetJdV_average(cv_nothing, qp) == getdetJdV_average(cv_2arg, qp)
+            for i in 1:getnbasefunctions(cv_2arg)
+                @test shape_value_jump(cv_3arg, qp, i)    == shape_value_jump(cv_2arg, qp, i)
+                @test shape_value_jump(cv_nothing, qp, i) == shape_value_jump(cv_2arg, qp, i)
+            end
+        end
+    end
+end
+
+@testset "reinit! with CellCache" begin
+    grid = generate_grid(Quadrilateral, (2, 1))
+    addcellset!(grid, "A", Set([1]))
+    addcellset!(grid, "B", Set([2]))
+    grid = insert_interfaces(grid, ["A", "B"])
+
+    qr = QuadratureRule{RefLine}(2)
+    ip = InterfaceCellInterpolation(Lagrange{RefLine, 1}())
+    cid = first(getcellset(grid, "interfaces"))
+
+    # The trait decides whether Ferrite's generic method passes the cell or `nothing`
+    cv = InterfaceCellValues(qr, ip)
+    @test Ferrite.reinit_needs_cell(cv) == false
+
+    cc = CellCache(grid)
+    reinit!(cc, cid)
+    reinit!(cv, cc)
+
+    cv_ref = InterfaceCellValues(qr, ip)
+    reinit!(cv_ref, getcells(grid, cid), getcoordinates(grid, cid))
+
+    @test all(getdetJdV_average(cv, q) ≈ getdetJdV_average(cv_ref, q) for q in 1:getnquadpoints(cv))
+end
