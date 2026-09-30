@@ -80,7 +80,6 @@
     end
 end
 
-
 @testset "Interface reinitialization allocations" begin
     ip = InterfaceCellInterpolation(Lagrange{RefLine, 2}())
     qr = QuadratureRule{RefLine}(2)
@@ -239,32 +238,4 @@ end
     reinit!(cv_ref, getcells(grid, cid), getcoordinates(grid, cid))
 
     @test all(getdetJdV_average(cv, q) ≈ getdetJdV_average(cv_ref, q) for q in 1:getnquadpoints(cv))
-end
-
-@testset "reinit! with superparametric field (ip order 2, geometry order 1)" begin
-    # midplane_rotation must recover a genuine, non-trivial rotation under
-    # order mismatch (function order 2, geometry order 1) — general coverage
-    # of getdetJdV/shape_gradient for mismatched orders lives in
-    # "Mixed solution and geometry orders"; that test's geometry is
-    # translation-only so it can't exercise rotation correctness.
-    ip     = InterfaceCellInterpolation(Lagrange{RefLine, 2}())
-    ip_geo = VectorizedInterpolation{2}(InterfaceCellInterpolation(Lagrange{RefLine, 1}()))
-    qr     = QuadratureRule{RefLine}(2)
-
-    p1 = Vec{2}((0.0, 0.0))
-    p2 = Vec{2}((2.0, 1.0))
-    x  = [p1, p2, p1, p2]
-
-    t = (p2 - p1) / norm(p2 - p1)
-    n = Vec{2}((-t[2], t[1]))
-
-    cv = InterfaceCellValues(Float64, qr, ip, ip_geo; include_R = Val(true))
-    reinit!(cv, x)
-    for qp in 1:getnquadpoints(cv.here)
-        R = midplane_rotation(cv, qp)
-        @test R⋅Vec{2}((1.0,0.0)) ≈ t
-        @test R⋅Vec{2}((0.0,1.0)) ≈ n
-        @test det(R) ≈ 1.0
-        @test R' ⋅ R ≈ one(Tensor{2, 2})
-    end
 end

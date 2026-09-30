@@ -104,7 +104,6 @@ Ferrite.shape_gradient_type(cv::InterfaceCellValues) = shape_gradient_type(cv.he
     return Ferrite.reinit_needs_cell(cv.here) || Ferrite.reinit_needs_cell(cv.there)
 end
 
-
 Ferrite.reinit!(cv::InterfaceCellValues, x::AbstractVector{<:Vec}) = reinit!(cv, nothing, x)
 
 function Ferrite.reinit!(cv::InterfaceCellValues{CV}, cell::Union{Nothing, InterfaceCell},
@@ -117,7 +116,7 @@ function Ferrite.reinit!(cv::InterfaceCellValues{CV}, cell::Union{Nothing, Inter
 
     reinit!(cv.here, cell_here, x_here)
     if ! (cv.here === cv.there)
-        reinit!(cv.there,cell_there, x_there)
+        reinit!(cv.there, cell_there, x_there)
     end
 
     if cv.R !== nothing
