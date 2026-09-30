@@ -102,22 +102,80 @@ end
     new_grid = insert_interfaces(grid, domain_names)
     test_grid_data(grid, new_grid)
 
-    # 7 ___ 8 ___ 9              7 ___ 8__13___ 9
-    # |\ c6 |\ c8 |              |\ c6 | c|\ c8 |
-    # |  \  |  \  |              |  \  |10|  \  |
-    # | c5 \| c7 \|              | c5 \|  | c7 \|
-    # 4 ___ 5 ___ 6     --->     11___10__12___ |
-    # |\ c2 |\ c4 |              | c9   \/     6
-    # |  \  |  \  |              4 ___  5 ____/|
-    # | c1 \| c3 \|              |\ c2  | \ c4 |
-    # 1 ___ 2 ___ 3              |  \   |   \  |
-    #                            | c1 \ |  c3 \|
-    #                            1 ____ 2 ____ 3
+    # Only "topleft" is separated from its neighbors. "bottom" and "topright" are not separated
+    # by an interface, so they keep sharing node 5 (the triple junction) and node 6.
+    # 7 ___ 8 ___ 9              7 __ 8'_ 8 ____ 9
+    # |\ c6 |\ c8 |              |\ c6 |  |\ c8  |
+    # |  \  |  \  |              |  \  |c9|  \   |
+    # | c5 \| c7 \|              | c5 \|  | c7 \ |
+    # 4 ___ 5 ___ 6     --->     4'__ 5'\ | ____ 6
+    # |\ c2 |\ c4 |              |  c10  \5\ c4  |
+    # |  \  |  \  |              4 _____/ |  \   |
+    # | c1 \| c3 \|              |\ c2    |   \  |
+    # 1 ___ 2 ___ 3              |  \     |    \ |
+    #                            | c1 \   |  c3 \|
+    #                            1 _____\ 2 ____ 3
     #
     new_grid = insert_interfaces(grid, Dict(["A" => ("bottom", "topleft"), "B" => ("topright", "topleft")]))
-    @test length(new_grid.nodes) == 13
+    @test length(new_grid.nodes) == 12
     @test length(new_grid.cells) == 10
     @test length(new_grid.cellsets) == 6
+    nodes_in(name) = Set(Iterators.flatten(Ferrite.get_node_ids(c) for c in getcells(new_grid, name)))
+    @test isdisjoint(nodes_in("bottom"), nodes_in("topleft"))
+    @test isdisjoint(nodes_in("topright"), nodes_in("topleft"))
+    @test nodes_in("bottom") ∩ nodes_in("topright") == Set((5, 6))
+end
+
+@testset "Triple junction with partial interfaces" begin
+    # 7 ___ 8 ___ 9
+    # |     |     |
+    # | c3  | c4  |    A = {c1, c2}, B = {c3}, C = {c4}
+    # |  B  |  C  |    Node 5 is shared by all three domains.
+    # 4 ___ 5 ___ 6
+    # |     |     |
+    # | c1  | c2  |
+    # |  A  |  A  |
+    # 1 ___ 2 ___ 3
+    grid = generate_grid(Quadrilateral, (2, 2))
+    addcellset!(grid, "A", OrderedSet((1, 2)))
+    addcellset!(grid, "B", OrderedSet((3,)))
+    addcellset!(grid, "C", OrderedSet((4,)))
+    nodes_in(g, name) = Set(Iterators.flatten(Ferrite.get_node_ids(c) for c in getcells(g, name)))
+    shared_nodes(g, cellid1, cellid2) = intersect(Ferrite.get_node_ids(getcells(g, cellid1)), Ferrite.get_node_ids(getcells(g, cellid2)))
+
+    # All pairs: node 5 is split three ways
+    new_grid = insert_interfaces(grid, ["A", "B", "C"])
+    @test getnnodes(new_grid) == getnnodes(grid) + 5
+    @test isdisjoint(nodes_in(new_grid, "A"), nodes_in(new_grid, "B"))
+    @test isdisjoint(nodes_in(new_grid, "A"), nodes_in(new_grid, "C"))
+    @test isdisjoint(nodes_in(new_grid, "B"), nodes_in(new_grid, "C"))
+    @test length(getcellset(new_grid, "interfaces")) == 3
+
+    # A-B and B-C: B is separated from both, A and C keep sharing node 5 and the facet 5-6
+    new_grid = insert_interfaces(grid, Dict("AB" => ("A", "B"), "BC" => ("B", "C")))
+    @test getnnodes(new_grid) == getnnodes(grid) + 3
+    @test isdisjoint(nodes_in(new_grid, "A"), nodes_in(new_grid, "B"))
+    @test isdisjoint(nodes_in(new_grid, "B"), nodes_in(new_grid, "C"))
+    # Which component keeps the original node id depends on the iteration order of the Dict
+    shared = shared_nodes(new_grid, 2, 4)
+    @test length(shared) == 2 && 6 in shared
+    @test nodes_in(new_grid, "A") ∩ nodes_in(new_grid, "C") == Set(shared)
+    @test length(getcellset(new_grid, "AB")) == 1
+    @test length(getcellset(new_grid, "BC")) == 1
+    for cellid in getcellset(new_grid, "interfaces")
+        cell = getcells(new_grid, cellid)
+        @test isdisjoint(Ferrite.get_node_ids(cell.here), Ferrite.get_node_ids(cell.there))
+    end
+
+    # Only A-B: B is still bonded to A at node 5 through C, so node 5 is not duplicated
+    # and the interface ends in a crack tip
+    new_grid = insert_interfaces(grid, Dict("AB" => ("A", "B")))
+    @test getnnodes(new_grid) == getnnodes(grid) + 1
+    @test nodes_in(new_grid, "A") ∩ nodes_in(new_grid, "B") == Set((5,))
+    @test shared_nodes(new_grid, 3, 4) == [5, 8]
+    @test shared_nodes(new_grid, 2, 4) == [6, 5]
+    interface = only(getcells(new_grid, "interfaces"))
+    @test 5 in Ferrite.get_node_ids(interface.here) && 5 in Ferrite.get_node_ids(interface.there)
 end
 
 @testset "Inserting interfaces in 3D" begin
