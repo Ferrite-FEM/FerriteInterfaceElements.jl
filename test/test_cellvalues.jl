@@ -127,6 +127,49 @@ end
     end
 end
 
+@testset "midplane_rotation for mixed orders and non-trivial geometry" begin
+    for base_cell in (Line, QuadraticLine, Triangle, QuadraticTriangle, Quadrilateral, QuadraticQuadrilateral)
+        shape = Ferrite.getrefshape(base_cell)
+        dim = Ferrite.getrefdim(base_cell) + 1
+        base_gip = geometric_interpolation(base_cell)
+        gip = InterfaceCellInterpolation(base_gip)
+        gorder = Ferrite.getorder(base_gip)
+        qr = QuadratureRule{shape}(2)
+        Q = dim == 2 ? rotation_tensor(0.7) : rotation_tensor(Vec{3}((1.0, 2.0, 3.0)), 0.7)
+        eᵢ(i) = Vec{dim}(j -> j == i ? 1.0 : 0.0)
+        # xt differs from xh by a non-constant height h(ξ), so the midplane frame differs from both sides
+        # (and varies between quadrature points for quadratic geometry). h is exactly represented by gip.
+        h(ξ) = gorder == 1 ? 1 + 0.3 * sum(ξ) : 1 + 0.3 * (ξ ⋅ ξ)
+        ∇h(ξ) = gorder == 1 ? Vec{dim-1}(_ -> 0.3) : 0.6 * ξ
+        lift(ξ) = Vec{dim}(i -> i < dim ? ξ[i] : 0.0)
+        ξ_nodes = Ferrite.reference_coordinates(base_gip)
+        # Reference element embedded in the plane x_dim = 0, then rotated by Q
+        xh = [Q ⋅ lift(ξ) for ξ in ξ_nodes]
+        # Same as xh but with an added height change h(ξ).
+        xt = [Q ⋅ (lift(ξ) + h(ξ) * eᵢ(dim)) for ξ in ξ_nodes]
+        nn = length(ξ_nodes)
+        cell = InterfaceCell(base_cell(Tuple(1:nn)), base_cell(Tuple(nn+1:2nn)))
+        x = vcat(xh, xt)[collect(cell.nodes)]
+
+        for forder in (1, 2), vectorized in (false, true), shared in (false, true)
+            fip = InterfaceCellInterpolation(Lagrange{shape, forder}())
+            cv = InterfaceCellValues(qr, vectorized ? fip^dim : fip, gip; use_same_cv = shared, include_R = true)
+            reinit!(cv, x)
+            for (qp, ξ) in pairs(Ferrite.getpoints(qr))
+                # Midplane tangents a_k = ∂((xh + xt)/2)/∂ξ_k
+                a = [Q ⋅ (eᵢ(k) + ∇h(ξ)[k] / 2 * eᵢ(dim)) for k in 1:dim-1]
+                t = a[1] / norm(a[1])
+                n = dim == 2 ? Vec{2}((-t[2], t[1])) : (a[1] × a[2]) / norm(a[1] × a[2])
+                R = midplane_rotation(cv, qp)
+                @test tdot(R) ≈ one(R)
+                @test det(R) ≈ 1
+                @test R ⋅ eᵢ(1) ≈ t
+                @test R ⋅ eᵢ(dim) ≈ n
+            end
+        end
+    end
+end
+
 @testset "Invalid interface solution lengths" begin
     ip = InterfaceCellInterpolation(Lagrange{RefLine, 1}())
     cv = InterfaceCellValues(QuadratureRule{RefLine}(2), ip)
